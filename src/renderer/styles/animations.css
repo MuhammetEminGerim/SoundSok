@@ -1,0 +1,363 @@
+/* ════════════════════════════════════════════════════════════
+   SoundSok — Animations & Micro-interactions
+   Premium motion design for a polished UX
+   ════════════════════════════════════════════════════════════ */
+
+
+/* ─── Keyframes ─── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.45), 0 0 60px rgba(139, 92, 246, 0.15);
+  }
+}
+
+@keyframes waveform {
+  0%, 100% { height: 4px; }
+  50%      { height: 18px; }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-6px);
+  }
+  60% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes dragPulse {
+  0%, 100% {
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: inset 0 0 40px rgba(139, 92, 246, 0.03);
+  }
+  50% {
+    border-color: rgba(139, 92, 246, 0.8);
+    box-shadow: inset 0 0 80px rgba(139, 92, 246, 0.08);
+  }
+}
+
+@keyframes progressShimmer {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 130%;
+  }
+}
+
+@keyframes pressDown {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.93); }
+  100% { transform: scale(1); }
+}
+
+@keyframes contextMenuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+
+/* ─── Animation Utility Classes ─── */
+
+.animate-fade-in {
+  animation: fadeIn 350ms ease both;
+}
+
+.animate-fade-out {
+  animation: fadeOut 250ms ease both;
+}
+
+.animate-slide-up {
+  animation: slideUp 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-slide-down {
+  animation: slideDown 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-bounce {
+  animation: bounce 500ms ease both;
+}
+
+
+/* ─── Sound Card Staggered Entrance ─── */
+
+.sound-card {
+  animation: scaleIn 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sound-card:nth-child(1)  { animation-delay:  0ms; }
+.sound-card:nth-child(2)  { animation-delay: 30ms; }
+.sound-card:nth-child(3)  { animation-delay: 60ms; }
+.sound-card:nth-child(4)  { animation-delay: 90ms; }
+.sound-card:nth-child(5)  { animation-delay: 120ms; }
+.sound-card:nth-child(6)  { animation-delay: 150ms; }
+.sound-card:nth-child(7)  { animation-delay: 180ms; }
+.sound-card:nth-child(8)  { animation-delay: 210ms; }
+.sound-card:nth-child(9)  { animation-delay: 240ms; }
+.sound-card:nth-child(10) { animation-delay: 270ms; }
+.sound-card:nth-child(11) { animation-delay: 300ms; }
+.sound-card:nth-child(12) { animation-delay: 330ms; }
+.sound-card:nth-child(13) { animation-delay: 360ms; }
+.sound-card:nth-child(14) { animation-delay: 390ms; }
+.sound-card:nth-child(15) { animation-delay: 420ms; }
+.sound-card:nth-child(16) { animation-delay: 450ms; }
+.sound-card:nth-child(n+17) { animation-delay: 480ms; }
+
+
+/* ─── Playing Indicator Waveform ─── */
+
+.waveform-bars.active span:nth-child(1) {
+  animation: waveform 0.45s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+.waveform-bars.active span:nth-child(2) {
+  animation: waveform 0.55s ease-in-out infinite;
+  animation-delay: 0.12s;
+}
+
+.waveform-bars.active span:nth-child(3) {
+  animation: waveform 0.4s ease-in-out infinite;
+  animation-delay: 0.24s;
+}
+
+.waveform-bars.active span:nth-child(4) {
+  animation: waveform 0.5s ease-in-out infinite;
+  animation-delay: 0.06s;
+}
+
+
+/* ─── Button Press Animation ─── */
+
+.btn:active,
+.btn-icon:active {
+  animation: pressDown 200ms ease;
+}
+
+
+/* ─── Drag Overlay Pulse ─── */
+
+.drag-overlay:not(.hidden) {
+  animation: fadeIn 200ms ease both;
+}
+
+.drag-overlay:not(.hidden) .drag-overlay-content {
+  animation: dragPulse 1.8s ease-in-out infinite, scaleIn 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+
+/* ─── Progress Bar Shimmer ─── */
+
+.player-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.player-progress-fill.playing::after {
+  animation: progressShimmer 2.5s ease-in-out infinite;
+}
+
+
+/* ─── Sidebar Category Slide-in ─── */
+
+.category-item {
+  animation: slideInLeft 350ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.category-item:nth-child(1) { animation-delay:  0ms; }
+.category-item:nth-child(2) { animation-delay: 40ms; }
+.category-item:nth-child(3) { animation-delay: 80ms; }
+.category-item:nth-child(4) { animation-delay: 120ms; }
+.category-item:nth-child(5) { animation-delay: 160ms; }
+.category-item:nth-child(6) { animation-delay: 200ms; }
+.category-item:nth-child(7) { animation-delay: 240ms; }
+.category-item:nth-child(8) { animation-delay: 280ms; }
+.category-item:nth-child(n+9) { animation-delay: 320ms; }
+
+
+/* ─── Context Menu Animation ─── */
+
+.context-menu:not(.hidden) {
+  animation: contextMenuIn 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+
+/* ─── Playing Card Glow ─── */
+
+.sound-card.playing {
+  animation: glow 2.5s ease-in-out infinite;
+}
+
+
+/* ─── Modal Animations ─── */
+
+.modal-backdrop {
+  animation: fadeIn 200ms ease both;
+}
+
+.modal-backdrop .modal {
+  animation: scaleIn 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 50ms;
+}
+
+
+/* ─── Loading Spinner ─── */
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+
+/* ─── Skeleton Loader ─── */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    rgba(139, 92, 246, 0.08) 50%,
+    var(--bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+
+/* ─── Focus Visible ─── */
+
+*:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+
+/* ─── Reduced Motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

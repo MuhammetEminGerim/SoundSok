@@ -1,0 +1,56 @@
+/**
+ * SoundSok - IPC Channel Name Constants
+ *
+ * Every IPC message between the main and renderer processes must use one of
+ * these channel names.  Centralising them here prevents typo-induced bugs
+ * and makes refactoring straightforward.
+ */
+
+// ── Sound CRUD ───────────────────────────────────────────────────────────────
+const SOUND_ADD    = 'sound:add';
+const SOUND_REMOVE = 'sound:remove';
+const SOUND_LIST   = 'sound:list';
+const SOUND_UPDATE = 'sound:update';
+
+// ── Playback Controls ────────────────────────────────────────────────────────
+const PLAYBACK_PLAY   = 'playback:play';
+const PLAYBACK_STOP   = 'playback:stop';
+const PLAYBACK_PAUSE  = 'playback:pause';
+const PLAYBACK_SEEK   = 'playback:seek';
+const PLAYBACK_VOLUME = 'playback:volume';
+
+// ── Native Dialogs ───────────────────────────────────────────────────────────
+const DIALOG_OPEN_FILES = 'dialog:open-files';
+
+// ── Window Controls (frameless title-bar buttons) ────────────────────────────
+const APP_MINIMIZE = 'app:minimize';
+const APP_MAXIMIZE = 'app:maximize';
+const APP_CLOSE    = 'app:close';
+
+// ── Category CRUD ────────────────────────────────────────────────────────────
+const CATEGORY_ADD    = 'category:add';
+const CATEGORY_REMOVE = 'category:remove';
+const CATEGORY_LIST   = 'category:list';
+
+module.exports = {
+  SOUND_ADD,
+  SOUND_REMOVE,
+  SOUND_LIST,
+  SOUND_UPDATE,
+
+  PLAYBACK_PLAY,
+  PLAYBACK_STOP,
+  PLAYBACK_PAUSE,
+  PLAYBACK_SEEK,
+  PLAYBACK_VOLUME,
+
+  DIALOG_OPEN_FILES,
+
+  APP_MINIMIZE,
+  APP_MAXIMIZE,
+  APP_CLOSE,
+
+  CATEGORY_ADD,
+  CATEGORY_REMOVE,
+  CATEGORY_LIST,
+};

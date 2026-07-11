@@ -1,0 +1,238 @@
+/* ════════════════════════════════════════════════════════════
+   SoundSok — Design System & Global Styles
+   Premium dark-mode soundboard with neon violet/indigo accents
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── Design Tokens ─── */
+:root {
+  /* Backgrounds */
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-tertiary: #1a1a2e;
+  --bg-card: rgba(26, 26, 46, 0.7);
+  --bg-hover: rgba(139, 92, 246, 0.1);
+  --bg-active: rgba(139, 92, 246, 0.18);
+
+  /* Text */
+  --text-primary: #e4e4e7;
+  --text-secondary: #a1a1aa;
+  --text-muted: #52525b;
+
+  /* Accent Palette */
+  --accent-primary: #8b5cf6;
+  --accent-secondary: #6366f1;
+  --accent-tertiary: #a78bfa;
+  --accent-gradient: linear-gradient(135deg, #8b5cf6, #6366f1);
+  --accent-gradient-hover: linear-gradient(135deg, #9b6ff7, #7577f2);
+  --accent-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+  --accent-glow-strong: 0 0 30px rgba(139, 92, 246, 0.45);
+
+  /* Borders */
+  --border-color: rgba(139, 92, 246, 0.15);
+  --border-color-strong: rgba(139, 92, 246, 0.3);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(26, 26, 46, 0.6);
+  --glass-bg-heavy: rgba(18, 18, 26, 0.85);
+  --glass-border: rgba(139, 92, 246, 0.1);
+  --glass-blur: blur(20px);
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 400ms ease;
+  --transition-spring: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(139, 92, 246, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(139, 92, 246, 0.08);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(139, 92, 246, 0.12);
+  --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.6), 0 8px 20px rgba(139, 92, 246, 0.15);
+  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.25), 0 0 40px rgba(139, 92, 246, 0.1);
+
+  /* Layout */
+  --titlebar-height: 38px;
+  --sidebar-width: 260px;
+  --player-height: 80px;
+
+  /* Z-index layers */
+  --z-base: 1;
+  --z-sidebar: 10;
+  --z-toolbar: 20;
+  --z-player: 30;
+  --z-context-menu: 100;
+  --z-overlay: 200;
+  --z-titlebar: 300;
+
+  /* Danger */
+  --danger: #ef4444;
+  --danger-hover: rgba(239, 68, 68, 0.15);
+}
+
+
+/* ─── Global Reset ─── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  background: none;
+  color: inherit;
+  outline: none;
+}
+
+a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+
+/* ─── Scrollbar Styling ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.25);
+  border-radius: var(--radius-full);
+  transition: background var(--transition-normal);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.45);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+
+/* ─── Selection ─── */
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: var(--text-primary);
+}
+
+
+/* ─── App Layout (CSS Grid) ─── */
+#app {
+  display: grid;
+  grid-template-rows: var(--titlebar-height) 1fr var(--player-height);
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-areas:
+    "titlebar titlebar"
+    "sidebar  content"
+    "player   player";
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+}
+
+#titlebar {
+  grid-area: titlebar;
+  z-index: var(--z-titlebar);
+}
+
+#sidebar {
+  grid-area: sidebar;
+  z-index: var(--z-sidebar);
+}
+
+#main-layout {
+  display: contents;
+}
+
+#content {
+  grid-area: content;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+#player-bar {
+  grid-area: player;
+  z-index: var(--z-player);
+}
+
+
+/* ─── Utility Classes ─── */
+.hidden {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
