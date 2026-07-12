@@ -110,7 +110,7 @@ function createWindow() {
     minHeight: 600,
     title: APP_NAME,
     frame: false,                     // frameless window – custom title bar
-    backgroundColor: '#0a0a0f',
+    backgroundColor: '#f5f6fa',
     show: false,                      // avoid white flash before content loads
     webPreferences: {
       nodeIntegration: false,

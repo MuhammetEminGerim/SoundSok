@@ -440,8 +440,8 @@
 .sound-card:hover {
   transform: translateY(-3px) scale(1.02);
   border-color: var(--border-color-strong);
-  box-shadow: var(--shadow-lg), 0 0 25px rgba(139, 92, 246, 0.15);
-  background: rgba(26, 26, 46, 0.85);
+  box-shadow: var(--shadow-lg), 0 0 25px rgba(124, 58, 237, 0.15);
+  background: var(--bg-secondary);
 }
 
 .sound-card:hover::before {
@@ -1362,7 +1362,8 @@
 .hotbar-slot.filled {
   border-style: solid;
   border-color: var(--accent-primary);
-  background: rgba(26, 26, 46, 0.8);
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-sm);
 }
 
 .hotbar-slot.drag-over {
