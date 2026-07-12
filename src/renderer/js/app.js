@@ -440,18 +440,25 @@
         break;
 
       case 'volume':
-        const currentVol = typeof sound.volume === 'number' ? Math.round(sound.volume * 100) : 80;
-        const inputVol = prompt(`"${sound.name}" sesinin çalma seviyesini girin (0 - 100):`, currentVol);
-        if (inputVol !== null) {
-          const val = parseInt(inputVol, 10);
-          if (!isNaN(val) && val >= 0 && val <= 100) {
-            const normalizedVol = val / 100;
-            sound.volume = normalizedVol;
-            window.SoundList.updateSound(sound.id, { volume: normalizedVol });
-            if (window.soundsok && window.soundsok.sounds) {
-              await window.soundsok.sounds.update(sound.id, { volume: normalizedVol });
+        try {
+          console.log('[App] Opening volume prompt for:', sound.name);
+          const currentVol = typeof sound.volume === 'number' ? Math.round(sound.volume * 100) : 80;
+          const inputVol = prompt(`"${sound.name}" sesinin çalma seviyesini girin (0 - 100):`, String(currentVol));
+          console.log('[App] Volume prompt response:', inputVol);
+          if (inputVol !== null) {
+            const val = parseInt(inputVol, 10);
+            if (!isNaN(val) && val >= 0 && val <= 100) {
+              const normalizedVol = val / 100;
+              sound.volume = normalizedVol;
+              window.SoundList.updateSound(sound.id, { volume: normalizedVol });
+              if (window.soundsok && window.soundsok.sounds) {
+                await window.soundsok.sounds.update(sound.id, { volume: normalizedVol });
+              }
+              console.log('[App] Sound volume updated to:', normalizedVol);
             }
           }
+        } catch (err) {
+          console.error('[App] Error during volume change prompt:', err);
         }
         break;
 
