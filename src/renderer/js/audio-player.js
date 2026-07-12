@@ -238,6 +238,7 @@ class AudioPlayerEngine {
         if (this.audioSpeakers.setSinkId) {
           await this.audioSpeakers.setSinkId(this.speakerDeviceId);
         }
+        this._updateActualVolumes();
         promises.push(this.audioSpeakers.play());
       }
 
@@ -247,6 +248,7 @@ class AudioPlayerEngine {
         if (this.audioMic.setSinkId) {
           await this.audioMic.setSinkId(this.micDeviceId);
         }
+        this._updateActualVolumes();
         promises.push(this.audioMic.play());
       }
 
