@@ -25,7 +25,15 @@ const {
   CATEGORY_ADD,
   CATEGORY_REMOVE,
   CATEGORY_LIST,
+  CATEGORY_UPDATE,
+  HOTKEY_ASSIGN,
+  HOTKEY_CHECK,
+  APP_TOGGLE_STARTUP,
+  PTT_PRESS,
+  PTT_RELEASE,
 } = require('../shared/ipc-channels');
+const { registerAllShortcuts } = require('./globalShortcuts');
+const { app } = require('electron');
 
 /**
  * Build a file-dialog filter object from the supported format list.
@@ -71,11 +79,7 @@ function registerIpcHandlers(db, mainWindow) {
       filters: buildAudioFilters(),
     });
 
-    if (result.canceled) {
-      return [];
-    }
-
-    return result.filePaths;
+    return result;
   });
 
   // ── Sound CRUD ─────────────────────────────────────────────────────────
@@ -153,6 +157,89 @@ function registerIpcHandlers(db, mainWindow) {
     }
   });
 
+  ipcMain.handle(CATEGORY_UPDATE, (_event, id, data) => {
+    try {
+      const category = db.updateCategory(id, data);
+      if (!category) {
+        return { success: false, error: 'Category not found.' };
+      }
+      return { success: true, category };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // ── Hotkeys & Settings ──────────────────────────────────────────────────
+
+  ipcMain.handle(HOTKEY_CHECK, (_event, hotkey) => {
+    try {
+      const sounds = db.getAllSounds();
+      const conflict = sounds.find(s => s.hotkey === hotkey);
+      return { success: true, conflict };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(HOTKEY_ASSIGN, (_event, soundId, hotkey) => {
+    try {
+      // If there's an existing sound with this hotkey, clear it
+      if (hotkey) {
+        const sounds = db.getAllSounds();
+        const conflict = sounds.find(s => s.hotkey === hotkey);
+        if (conflict && conflict.id !== soundId) {
+          db.updateSound(conflict.id, { hotkey: null });
+        }
+      }
+      
+      const sound = db.updateSound(soundId, { hotkey });
+      registerAllShortcuts(); // Re-register with electron
+      return { success: true, sound };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(APP_TOGGLE_STARTUP, (_event, enable) => {
+    try {
+      app.setLoginItemSettings({
+        openAtLogin: enable,
+        path: app.getPath('exe'),
+      });
+      return { success: true, enabled: enable };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(PTT_PRESS, (_event, key) => {
+    try {
+      const fsReal = require('fs');
+      const { exec } = require('child_process');
+      const exePath = path.join(__dirname, 'ptt_helper.exe');
+      if (fsReal.existsSync(exePath)) {
+        exec(`"${exePath}" press "${key}"`);
+      }
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(PTT_RELEASE, (_event, key) => {
+    try {
+      const fsReal = require('fs');
+      const { exec } = require('child_process');
+      const exePath = path.join(__dirname, 'ptt_helper.exe');
+      if (fsReal.existsSync(exePath)) {
+        exec(`"${exePath}" release "${key}"`);
+      }
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
   // ── Window Controls (frameless title bar) ──────────────────────────────
 
   ipcMain.handle(APP_MINIMIZE, () => {
@@ -173,7 +260,7 @@ function registerIpcHandlers(db, mainWindow) {
 
   ipcMain.handle(APP_CLOSE, () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.close();
+      mainWindow.hide(); // Minimize to tray instead of close
     }
   });
 }

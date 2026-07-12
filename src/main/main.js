@@ -8,18 +8,96 @@
  *   4. Manage the standard Electron lifecycle events.
  */
 
+const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { app, BrowserWindow } = require('electron');
 const Database = require('./database');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { APP_NAME } = require('../shared/constants');
+const { createTray } = require('./tray');
+const { initGlobalShortcuts, unregisterAllShortcuts } = require('./globalShortcuts');
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
 
 /** @type {Database | null} */
 let database = null;
+
+// ── Single Instance Lock (CLI command receiver) ───────────────────────────
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (!mainWindow.isVisible()) mainWindow.show();
+      mainWindow.focus();
+      
+      // Handle the command line args sent from the second instance
+      handleCliArguments(commandLine);
+    }
+  });
+}
+
+function handleCliArguments(argv) {
+  console.log('[Main] Received CLI Arguments:', argv);
+  if (!mainWindow) return;
+  
+  const playIdIdx = argv.indexOf('--play-id');
+  if (playIdIdx !== -1 && playIdIdx + 1 < argv.length) {
+    mainWindow.webContents.send('cli:play-id', argv[playIdIdx + 1]);
+    return;
+  }
+  
+  const playSlotIdx = argv.indexOf('--play-slot');
+  if (playSlotIdx !== -1 && playSlotIdx + 1 < argv.length) {
+    const slot = parseInt(argv[playSlotIdx + 1], 10);
+    mainWindow.webContents.send('cli:play-slot', slot);
+    return;
+  }
+  
+  if (argv.includes('--stop')) {
+    mainWindow.webContents.send('cli:stop');
+    return;
+  }
+  
+  if (argv.includes('--toggle')) {
+    mainWindow.webContents.send('cli:toggle');
+    return;
+  }
+  
+  const volumeIdx = argv.indexOf('--volume');
+  if (volumeIdx !== -1 && volumeIdx + 1 < argv.length) {
+    const vol = parseInt(argv[volumeIdx + 1], 10);
+    mainWindow.webContents.send('cli:volume', vol);
+    return;
+  }
+}
+
+function compilePttHelper() {
+  const sourcePath = path.join(__dirname, 'ptt_helper.cs');
+  const exePath = path.join(__dirname, 'ptt_helper.exe');
+  
+  if (!fs.existsSync(exePath) && fs.existsSync(sourcePath)) {
+    try {
+      console.log('[Main] Compiling ptt_helper.cs...');
+      const windir = process.env.windir || 'C:\\Windows';
+      const cscPath = path.join(windir, 'Microsoft.NET', 'Framework', 'v4.0.30319', 'csc.exe');
+      
+      if (fs.existsSync(cscPath)) {
+        execSync(`"${cscPath}" /out:"${exePath}" "${sourcePath}"`, { stdio: 'ignore' });
+        console.log('[Main] ptt_helper.exe compiled successfully.');
+      } else {
+        console.warn('[Main] csc.exe not found. PTT automation will not work.');
+      }
+    } catch (err) {
+      console.error('[Main] Failed to compile ptt_helper.cs:', err);
+    }
+  }
+}
 
 /**
  * Create the primary application window.
@@ -55,6 +133,8 @@ function createWindow() {
   // Show the window once the renderer has finished painting
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    // Handle any arguments passed to the initial instance
+    handleCliArguments(process.argv);
   });
 
   // Open DevTools automatically in dev mode (electron . --dev)
@@ -70,6 +150,9 @@ function createWindow() {
 // ── App Lifecycle ──────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
+  // Compile the PTT automation helper first
+  compilePttHelper();
+
   // Initialise the database before anything else
   database = new Database();
   database.init();
@@ -78,6 +161,12 @@ app.whenReady().then(() => {
 
   // Wire up IPC channels
   registerIpcHandlers(database, mainWindow);
+  
+  // Create system tray
+  createTray(mainWindow);
+  
+  // Init global shortcuts
+  initGlobalShortcuts(database, mainWindow);
 
   // macOS: re-create the window when the dock icon is clicked
   app.on('activate', () => {
@@ -89,13 +178,13 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  // Close database connection before quitting
+  // We override this to NOT quit when all windows are closed,
+  // because we want the app to keep running in the tray.
+});
+
+app.on('before-quit', () => {
+  unregisterAllShortcuts();
   if (database) {
     database.close();
-  }
-
-  // On macOS the app traditionally stays active until Cmd+Q
-  if (process.platform !== 'darwin') {
-    app.quit();
   }
 });

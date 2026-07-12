@@ -57,8 +57,8 @@ class CategoryManager {
   async loadCategories() {
     try {
       if (window.soundsok && window.soundsok.categories) {
-        const result = await window.soundsok.categories.getAll();
-        this.categories = result || [];
+        const result = await window.soundsok.categories.list();
+        this.categories = (result && result.success) ? result.categories : [];
       } else {
         // Fallback: no IPC yet, start with empty
         this.categories = [];
@@ -240,8 +240,8 @@ class CategoryManager {
     try {
       if (window.soundsok && window.soundsok.categories) {
         const result = await window.soundsok.categories.add(newCategory);
-        if (result && result.id) {
-          newCategory.id = result.id;
+        if (result && result.success && result.category) {
+          newCategory.id = result.category.id;
         }
       }
     } catch (err) {
@@ -287,12 +287,50 @@ class CategoryManager {
   /* ─────────────── Category Context Menu ─────────────── */
 
   _showCategoryContextMenu(category, event) {
-    // For now, use a simple approach: show native confirm for delete
-    // A full custom context menu could be added later
-    const action = confirm(`"${category.name}" kategorisini silmek ister misiniz?`);
-    if (action) {
-      this.removeCategory(category.id);
-    }
+    // Remove any existing category context menu
+    const existing = document.querySelector('.category-ctx-menu');
+    if (existing) existing.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'category-ctx-menu context-menu';
+    menu.style.position = 'fixed';
+    menu.style.left = `${event.clientX}px`;
+    menu.style.top = `${event.clientY}px`;
+    menu.style.zIndex = '9999';
+
+    menu.innerHTML = `
+      <div class="context-menu-item" data-action="edit">
+        <span>✏️</span><span>Düzenle</span>
+      </div>
+      <div class="context-menu-item danger" data-action="delete">
+        <span>🗑️</span><span>Sil</span>
+      </div>
+    `;
+
+    menu.querySelector('[data-action="edit"]').addEventListener('click', () => {
+      menu.remove();
+      if (typeof window.openCategoryEditModal === 'function') {
+        window.openCategoryEditModal(category);
+      }
+    });
+
+    menu.querySelector('[data-action="delete"]').addEventListener('click', () => {
+      menu.remove();
+      if (confirm(`"${category.name}" kategorisini silmek ister misiniz?`)) {
+        this.removeCategory(category.id);
+      }
+    });
+
+    document.body.appendChild(menu);
+
+    // Close on click outside
+    const closeHandler = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener('click', closeHandler);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeHandler), 10);
   }
 
   /* ─────────────── Utility ─────────────── */
@@ -307,7 +345,7 @@ class CategoryManager {
     if (categoryId === null) {
       return window.SoundList.sounds.length;
     }
-    return window.SoundList.sounds.filter(s => s.categoryId === categoryId).length;
+    return window.SoundList.sounds.filter(s => String(s.categoryId) === String(categoryId)).length;
   }
 
   /**

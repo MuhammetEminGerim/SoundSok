@@ -74,9 +74,17 @@ class Database {
         sort_order  INTEGER DEFAULT 0,
         created_at  TEXT    DEFAULT CURRENT_TIMESTAMP,
         duration    REAL    DEFAULT 0,
+        hotbar_slot INTEGER,
         FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
       );
     `);
+
+    // Migration for existing database installations
+    try {
+      this.db.exec('ALTER TABLE sounds ADD COLUMN hotbar_slot INTEGER');
+    } catch (e) {
+      // Column already exists, safe to ignore
+    }
   }
 
   // ── Sound Methods ────────────────────────────────────────────────────────
@@ -97,8 +105,8 @@ class Database {
    */
   addSound(sound) {
     const stmt = this.db.prepare(`
-      INSERT INTO sounds (name, file_path, volume, category_id, hotkey, play_mode, sort_order, duration)
-      VALUES (@name, @filePath, @volume, @categoryId, @hotkey, @playMode, @sortOrder, @duration)
+      INSERT INTO sounds (name, file_path, volume, category_id, hotkey, play_mode, sort_order, duration, hotbar_slot)
+      VALUES (@name, @filePath, @volume, @categoryId, @hotkey, @playMode, @sortOrder, @duration, @hotbarSlot)
     `);
 
     const info = stmt.run({
@@ -110,6 +118,7 @@ class Database {
       playMode: sound.playMode ?? 'speakers',
       sortOrder: sound.sortOrder ?? 0,
       duration: sound.duration ?? 0,
+      hotbarSlot: sound.hotbarSlot ?? null,
     });
 
     return this.getSoundById(info.lastInsertRowid);
@@ -166,10 +175,12 @@ class Database {
       filePath: 'file_path',
       volume: 'volume',
       category_id: 'category_id',
+      categoryId: 'category_id',
       hotkey: 'hotkey',
       playMode: 'play_mode',
       sortOrder: 'sort_order',
       duration: 'duration',
+      hotbarSlot: 'hotbar_slot',
     };
 
     const setClauses = [];
@@ -324,12 +335,13 @@ class Database {
       name: row.name,
       filePath: row.file_path,
       volume: row.volume,
-      category_id: row.category_id,
+      categoryId: row.category_id,
       hotkey: row.hotkey,
       playMode: row.play_mode,
       sortOrder: row.sort_order,
       createdAt: row.created_at,
       duration: row.duration,
+      hotbarSlot: row.hotbar_slot,
     };
   }
 

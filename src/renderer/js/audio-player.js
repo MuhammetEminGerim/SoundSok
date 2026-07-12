@@ -6,8 +6,11 @@
 
 class AudioPlayerEngine {
   constructor() {
-    /** @type {HTMLAudioElement} */
-    this.audio = new Audio();
+    /** @type {HTMLAudioElement} Primary element for Speaker output */
+    this.audioSpeakers = new Audio();
+
+    /** @type {HTMLAudioElement} Secondary element for Microphone (Virtual Cable) output */
+    this.audioMic = new Audio();
 
     /** @type {boolean} */
     this.isPlaying = false;
@@ -22,10 +25,19 @@ class AudioPlayerEngine {
     this.duration = 0;
 
     /** @type {number} 0-1 */
-    this._volume = 0.8;
+    this._volume = parseFloat(localStorage.getItem('volume') || '0.8');
 
     /** @type {boolean} */
     this._muted = false;
+
+    /** @type {'speakers'|'microphone'|'both'} */
+    this.playMode = localStorage.getItem('playMode') || 'speakers';
+
+    /** @type {string} */
+    this.speakerDeviceId = localStorage.getItem('speakerDeviceId') || 'default';
+
+    /** @type {string} */
+    this.micDeviceId = localStorage.getItem('micDeviceId') || '';
 
     /** @type {Function|null} */
     this.onEnded = null;
@@ -42,59 +54,132 @@ class AudioPlayerEngine {
     /** @type {Function|null} */
     this.onStateChange = null;
 
-    // Configure initial volume
-    this.audio.volume = this._volume;
+    // Apply initial volume
+    this.audioSpeakers.volume = this._volume;
+    this.audioMic.volume = this._volume;
 
     // Bind internal event listeners
     this._bindEvents();
   }
 
+  /* ─────────────── Device Configuration ─────────────── */
+
+  /**
+   * Set the speaker output device.
+   * @param {string} deviceId
+   */
+  async setSpeakerDevice(deviceId) {
+    this.speakerDeviceId = deviceId || 'default';
+    localStorage.setItem('speakerDeviceId', this.speakerDeviceId);
+    
+    if (this.audioSpeakers.setSinkId) {
+      try {
+        await this.audioSpeakers.setSinkId(this.speakerDeviceId);
+        console.log('[AudioPlayer] Speaker output device set to:', deviceId);
+      } catch (err) {
+        console.error('[AudioPlayer] Failed to set speaker sink ID:', err);
+      }
+    }
+  }
+
+  /**
+   * Set the microphone (virtual cable) output device.
+   * @param {string} deviceId
+   */
+  async setMicDevice(deviceId) {
+    this.micDeviceId = deviceId || '';
+    localStorage.setItem('micDeviceId', this.micDeviceId);
+    
+    if (this.audioMic.setSinkId && this.micDeviceId) {
+      try {
+        await this.audioMic.setSinkId(this.micDeviceId);
+        console.log('[AudioPlayer] Mic/Cable output device set to:', deviceId);
+      } catch (err) {
+        console.error('[AudioPlayer] Failed to set mic sink ID:', err);
+      }
+    }
+  }
+
+  /**
+   * Set the active playback mode.
+   * @param {'speakers'|'microphone'|'both'} mode
+   */
+  setPlayMode(mode) {
+    if (['speakers', 'microphone', 'both'].includes(mode)) {
+      this.playMode = mode;
+      localStorage.setItem('playMode', mode);
+      console.log('[AudioPlayer] Playback mode set to:', mode);
+      this._emitStateChange();
+    }
+  }
+
   /* ─────────────── Internal Event Binding ─────────────── */
 
+  /**
+   * Get the primary Audio element driving the UI.
+   * @returns {HTMLAudioElement}
+   * @private
+   */
+  _getPrimaryAudio() {
+    return this.playMode === 'microphone' ? this.audioMic : this.audioSpeakers;
+  }
+
   _bindEvents() {
-    this.audio.addEventListener('loadedmetadata', () => {
-      this.duration = this.audio.duration || 0;
-      if (this.onLoaded) {
-        this.onLoaded({
-          duration: this.duration,
-          soundId: this.currentSoundId
-        });
-      }
-    });
+    // We bind metadata, time update, and ended listeners to both elements,
+    // but only let the active primary element drive the UI updates.
 
-    this.audio.addEventListener('timeupdate', () => {
-      if (this.onTimeUpdate) {
-        this.onTimeUpdate({
-          currentTime: this.audio.currentTime,
-          duration: this.duration,
-          progress: this.getProgress()
-        });
-      }
-    });
+    const setupListeners = (audioEl, name) => {
+      audioEl.addEventListener('loadedmetadata', () => {
+        if (audioEl !== this._getPrimaryAudio()) return;
+        this.duration = audioEl.duration || 0;
+        if (this.onLoaded) {
+          this.onLoaded({
+            duration: this.duration,
+            soundId: this.currentSoundId
+          });
+        }
+      });
 
-    this.audio.addEventListener('ended', () => {
-      this.isPlaying = false;
-      this.isPaused = false;
-      this._emitStateChange();
+      audioEl.addEventListener('timeupdate', () => {
+        if (audioEl !== this._getPrimaryAudio()) return;
+        if (this.onTimeUpdate) {
+          this.onTimeUpdate({
+            currentTime: audioEl.currentTime,
+            duration: this.duration,
+            progress: this.getProgress()
+          });
+        }
+      });
 
-      if (this.onEnded) {
-        this.onEnded({ soundId: this.currentSoundId });
-      }
-    });
+      audioEl.addEventListener('ended', () => {
+        if (audioEl !== this._getPrimaryAudio()) return;
+        this.isPlaying = false;
+        this.isPaused = false;
+        this._emitStateChange();
 
-    this.audio.addEventListener('error', (e) => {
-      console.error('[AudioPlayer] Playback error:', e);
-      this.isPlaying = false;
-      this.isPaused = false;
-      this._emitStateChange();
+        if (this.onEnded) {
+          this.onEnded({ soundId: this.currentSoundId });
+        }
+      });
 
-      if (this.onError) {
-        this.onError({
-          soundId: this.currentSoundId,
-          error: this.audio.error
-        });
-      }
-    });
+      audioEl.addEventListener('error', (e) => {
+        if (audioEl !== this._getPrimaryAudio()) return;
+        console.error(`[AudioPlayer] Playback error on ${name}:`, e);
+        this.isPlaying = false;
+        this.isPaused = false;
+        this._emitStateChange();
+
+        if (this.onError) {
+          this.onError({
+            soundId: this.currentSoundId,
+            error: audioEl.error
+          });
+        }
+      });
+    };
+
+    setupListeners(this.audioSpeakers, 'Speakers');
+    setupListeners(this.audioMic, 'Microphone');
   }
 
   _emitStateChange() {
@@ -102,7 +187,8 @@ class AudioPlayerEngine {
       this.onStateChange({
         isPlaying: this.isPlaying,
         isPaused: this.isPaused,
-        soundId: this.currentSoundId
+        soundId: this.currentSoundId,
+        playMode: this.playMode
       });
     }
   }
@@ -117,7 +203,6 @@ class AudioPlayerEngine {
    */
   async loadAndPlay(filePath, soundId) {
     try {
-      // Stop any currently playing audio
       this.stop();
 
       this.currentSoundId = soundId;
@@ -125,14 +210,34 @@ class AudioPlayerEngine {
       // Normalize path for Electron / file:// protocol
       let src = filePath;
       if (!src.startsWith('file://') && !src.startsWith('http')) {
-        // Convert Windows backslashes and ensure proper file:// prefix
         src = 'file:///' + src.replace(/\\/g, '/');
       }
 
-      this.audio.src = src;
-      this.audio.load();
+      // Configure targets according to mode
+      const playSpeakers = (this.playMode === 'speakers' || this.playMode === 'both');
+      const playMic = (this.playMode === 'microphone' || this.playMode === 'both');
 
-      await this.audio.play();
+      const promises = [];
+
+      if (playSpeakers) {
+        this.audioSpeakers.src = src;
+        this.audioSpeakers.load();
+        if (this.audioSpeakers.setSinkId) {
+          await this.audioSpeakers.setSinkId(this.speakerDeviceId);
+        }
+        promises.push(this.audioSpeakers.play());
+      }
+
+      if (playMic && this.micDeviceId) {
+        this.audioMic.src = src;
+        this.audioMic.load();
+        if (this.audioMic.setSinkId) {
+          await this.audioMic.setSinkId(this.micDeviceId);
+        }
+        promises.push(this.audioMic.play());
+      }
+
+      await Promise.all(promises);
 
       this.isPlaying = true;
       this.isPaused = false;
@@ -150,12 +255,14 @@ class AudioPlayerEngine {
   }
 
   /**
-   * Pause the current playback.
+   * Pause current playback.
    */
   pause() {
     if (!this.isPlaying || this.isPaused) return;
 
-    this.audio.pause();
+    this.audioSpeakers.pause();
+    this.audioMic.pause();
+
     this.isPlaying = false;
     this.isPaused = true;
     this._emitStateChange();
@@ -167,7 +274,14 @@ class AudioPlayerEngine {
   resume() {
     if (!this.isPaused) return;
 
-    this.audio.play().then(() => {
+    const playSpeakers = (this.playMode === 'speakers' || this.playMode === 'both');
+    const playMic = (this.playMode === 'microphone' || this.playMode === 'both');
+
+    const promises = [];
+    if (playSpeakers) promises.push(this.audioSpeakers.play());
+    if (playMic && this.micDeviceId) promises.push(this.audioMic.play());
+
+    Promise.all(promises).then(() => {
       this.isPlaying = true;
       this.isPaused = false;
       this._emitStateChange();
@@ -191,8 +305,14 @@ class AudioPlayerEngine {
    * Stop playback entirely and reset position.
    */
   stop() {
-    this.audio.pause();
-    this.audio.currentTime = 0;
+    this.audioSpeakers.pause();
+    this.audioSpeakers.currentTime = 0;
+    this.audioSpeakers.src = '';
+
+    this.audioMic.pause();
+    this.audioMic.currentTime = 0;
+    this.audioMic.src = '';
+
     this.isPlaying = false;
     this.isPaused = false;
     this._emitStateChange();
@@ -205,7 +325,13 @@ class AudioPlayerEngine {
   seek(percent) {
     if (!this.duration) return;
     const clampedPercent = Math.max(0, Math.min(100, percent));
-    this.audio.currentTime = (clampedPercent / 100) * this.duration;
+    const targetTime = (clampedPercent / 100) * this.duration;
+
+    const playSpeakers = (this.playMode === 'speakers' || this.playMode === 'both');
+    const playMic = (this.playMode === 'microphone' || this.playMode === 'both');
+
+    if (playSpeakers) this.audioSpeakers.currentTime = targetTime;
+    if (playMic && this.micDeviceId) this.audioMic.currentTime = targetTime;
   }
 
   /**
@@ -214,16 +340,20 @@ class AudioPlayerEngine {
    */
   setVolume(value) {
     this._volume = Math.max(0, Math.min(1, value));
-    this.audio.volume = this._volume;
+    localStorage.setItem('volume', this._volume.toString());
+
+    this.audioSpeakers.volume = this._volume;
+    this.audioMic.volume = this._volume;
 
     if (this._muted && this._volume > 0) {
       this._muted = false;
-      this.audio.muted = false;
+      this.audioSpeakers.muted = false;
+      this.audioMic.muted = false;
     }
   }
 
   /**
-   * Get the current volume (0 to 1).
+   * Get current volume (0 to 1).
    * @returns {number}
    */
   getVolume() {
@@ -235,7 +365,8 @@ class AudioPlayerEngine {
    */
   toggleMute() {
     this._muted = !this._muted;
-    this.audio.muted = this._muted;
+    this.audioSpeakers.muted = this._muted;
+    this.audioMic.muted = this._muted;
   }
 
   /**
@@ -247,24 +378,26 @@ class AudioPlayerEngine {
   }
 
   /**
-   * Get the current playback time in seconds.
+   * Get current playback time in seconds.
    * @returns {number}
    */
   getCurrentTime() {
-    return this.audio.currentTime || 0;
+    const audio = this._getPrimaryAudio();
+    return audio ? (audio.currentTime || 0) : 0;
   }
 
   /**
-   * Get the current progress as percentage (0–100).
+   * Get current progress as percentage (0–100).
    * @returns {number}
    */
   getProgress() {
     if (!this.duration || this.duration === 0) return 0;
-    return (this.audio.currentTime / this.duration) * 100;
+    const audio = this._getPrimaryAudio();
+    return audio ? ((audio.currentTime / this.duration) * 100) : 0;
   }
 
   /**
-   * Get the total duration in seconds.
+   * Get total duration in seconds.
    * @returns {number}
    */
   getDuration() {

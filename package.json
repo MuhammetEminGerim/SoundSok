@@ -4,8 +4,8 @@
   "description": "SoundSok - Premium Ses Tahtası",
   "main": "src/main/main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev"
+    "start": "electron . --enable-logging",
+    "dev": "electron . --dev --enable-logging"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0"

@@ -8,19 +8,25 @@
  */
 
 const { contextBridge, ipcRenderer } = require('electron');
-const {
-  SOUND_ADD,
-  SOUND_REMOVE,
-  SOUND_LIST,
-  SOUND_UPDATE,
-  DIALOG_OPEN_FILES,
-  APP_MINIMIZE,
-  APP_MAXIMIZE,
-  APP_CLOSE,
-  CATEGORY_ADD,
-  CATEGORY_REMOVE,
-  CATEGORY_LIST,
-} = require('../shared/ipc-channels');
+
+// ── IPC Channels (declared locally to support sandboxed preload script) ──
+const SOUND_ADD          = 'sound:add';
+const SOUND_REMOVE       = 'sound:remove';
+const SOUND_LIST         = 'sound:list';
+const SOUND_UPDATE       = 'sound:update';
+const DIALOG_OPEN_FILES  = 'dialog:open-files';
+const APP_MINIMIZE       = 'app:minimize';
+const APP_MAXIMIZE       = 'app:maximize';
+const APP_CLOSE          = 'app:close';
+const CATEGORY_ADD       = 'category:add';
+const CATEGORY_REMOVE    = 'category:remove';
+const CATEGORY_LIST      = 'category:list';
+const CATEGORY_UPDATE    = 'category:update';
+const HOTKEY_ASSIGN      = 'hotkey:assign';
+const HOTKEY_CHECK       = 'hotkey:check';
+const APP_TOGGLE_STARTUP = 'app:toggle-startup';
+const PTT_PRESS          = 'ptt:press';
+const PTT_RELEASE        = 'ptt:release';
 
 contextBridge.exposeInMainWorld('soundsok', {
   // ── Sound Operations ───────────────────────────────────────────────────
@@ -72,17 +78,49 @@ contextBridge.exposeInMainWorld('soundsok', {
      */
     remove: (id) => ipcRenderer.invoke(CATEGORY_REMOVE, id),
 
-    /**
-     * Retrieve all categories.
-     * @returns {Promise<{ success: boolean, categories?: Object[], error?: string }>}
-     */
     list: () => ipcRenderer.invoke(CATEGORY_LIST),
+
+    /**
+     * Update an existing category.
+     * @param {number} id   - Category id to update.
+     * @param {Object} data - Key/value pairs to change (camelCase keys).
+     * @returns {Promise<{ success: boolean, category?: Object, error?: string }>}
+     */
+    update: (id, data) => ipcRenderer.invoke(CATEGORY_UPDATE, id, data),
   },
 
   // ── Playback ───────────────────────────────────────────────────────────
   // Audio playback is handled entirely in the renderer process using the
-  // Web Audio API, so no IPC calls are needed here.
-  playback: {},
+  // Web Audio API, but we need to listen for hotkey triggers from main.
+  playback: {
+    onPlayHotkey: (callback) => {
+      ipcRenderer.on('PLAYBACK_PLAY_HOTKEY', (_event, sound) => callback(sound));
+    }
+  },
+
+  // ── Hotkeys & Settings ─────────────────────────────────────────────────
+  
+  hotkeys: {
+    assign: (soundId, hotkey) => ipcRenderer.invoke(HOTKEY_ASSIGN, soundId, hotkey),
+    check: (hotkey) => ipcRenderer.invoke(HOTKEY_CHECK, hotkey),
+  },
+  
+  settings: {
+    toggleStartup: (enable) => ipcRenderer.invoke(APP_TOGGLE_STARTUP, enable),
+  },
+  
+  ptt: {
+    press: (key) => ipcRenderer.invoke(PTT_PRESS, key),
+    release: (key) => ipcRenderer.invoke(PTT_RELEASE, key),
+  },
+
+  cli: {
+    onPlayId: (callback) => ipcRenderer.on('cli:play-id', (_event, id) => callback(id)),
+    onPlaySlot: (callback) => ipcRenderer.on('cli:play-slot', (_event, slot) => callback(slot)),
+    onStop: (callback) => ipcRenderer.on('cli:stop', () => callback()),
+    onToggle: (callback) => ipcRenderer.on('cli:toggle', () => callback()),
+    onVolume: (callback) => ipcRenderer.on('cli:volume', (_event, vol) => callback(vol)),
+  },
 
   // ── Native Dialogs ─────────────────────────────────────────────────────
 

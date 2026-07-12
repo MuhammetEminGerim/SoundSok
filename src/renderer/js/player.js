@@ -25,7 +25,10 @@ class PlayerController {
       iconVolumeMuted: null,
       volumeSlider: null,
       volumeFill: null,
-      waveformBars: null
+      waveformBars: null,
+      btnPlaybackMode: null,
+      playbackModeIcon: null,
+      playbackModeLabel: null
     };
 
     /** @type {number|null} rAF ID for progress updater */
@@ -60,9 +63,13 @@ class PlayerController {
     this.els.volumeSlider = document.getElementById('volume-slider');
     this.els.volumeFill = document.getElementById('volume-fill');
     this.els.waveformBars = document.getElementById('waveform-bars');
+    this.els.btnPlaybackMode = document.getElementById('btn-playback-mode');
+    this.els.playbackModeIcon = document.getElementById('playback-mode-icon');
+    this.els.playbackModeLabel = document.getElementById('playback-mode-label');
 
     this._bindControlEvents();
     this._bindAudioPlayerCallbacks();
+    this._updatePlaybackModeUI();
   }
 
   /* ─────────────── Event Binding ─────────────── */
@@ -70,8 +77,18 @@ class PlayerController {
   _bindControlEvents() {
     // Play / Pause
     this.els.btnPlayPause?.addEventListener('click', () => {
-      if (!window.AudioPlayer.hasActiveSound()) return;
-      window.AudioPlayer.togglePlayPause();
+      const ap = window.AudioPlayer;
+      if (ap.isPlaying) {
+        ap.pause();
+      } else if (ap.isPaused) {
+        ap.resume();
+      } else if (ap.currentSoundId) {
+        const sound = window.SoundList.getSoundById(ap.currentSoundId);
+        if (sound && sound.filePath) {
+          ap.loadAndPlay(sound.filePath, sound.id);
+          this.updateNowPlaying(sound);
+        }
+      }
     });
 
     // Stop
@@ -125,6 +142,11 @@ class PlayerController {
       window.AudioPlayer.toggleMute();
       this._updateVolumeIcon();
     });
+
+    // Playback Mode Toggle
+    this.els.btnPlaybackMode?.addEventListener('click', () => {
+      this.togglePlaybackMode();
+    });
   }
 
   _bindAudioPlayerCallbacks() {
@@ -155,14 +177,29 @@ class PlayerController {
         if (window.SoundList) {
           window.SoundList.clearPlayingState();
         }
+        
+        // PTT Auto release
+        if (localStorage.getItem('pttEnable') === 'true' && window.soundsok && window.soundsok.ptt) {
+          window.soundsok.ptt.release(localStorage.getItem('pttKey') || 'V');
+        }
       } else if (state.isPlaying) {
         this.startProgressUpdater();
         if (window.SoundList) {
           window.SoundList._updatePlayingState(state.soundId);
         }
+        
+        // PTT Auto press
+        if (localStorage.getItem('pttEnable') === 'true' && window.soundsok && window.soundsok.ptt) {
+          window.soundsok.ptt.press(localStorage.getItem('pttKey') || 'V');
+        }
       } else {
         // Paused
         this.stopProgressUpdater();
+        
+        // PTT Auto release
+        if (localStorage.getItem('pttEnable') === 'true' && window.soundsok && window.soundsok.ptt) {
+          window.soundsok.ptt.release(localStorage.getItem('pttKey') || 'V');
+        }
       }
     };
 
@@ -170,9 +207,6 @@ class PlayerController {
     ap.onEnded = (data) => {
       this.updatePlayState(false);
       this.stopProgressUpdater();
-
-      // Auto-play next
-      this._playNext();
     };
 
     // Error
@@ -352,6 +386,41 @@ class PlayerController {
     if (prev) {
       window.AudioPlayer.loadAndPlay(prev.filePath, prev.id);
       this.updateNowPlaying(prev);
+    }
+  }
+
+  /**
+   * Toggle between the playback modes: speakers -> microphone -> both -> speakers
+   */
+  togglePlaybackMode() {
+    const ap = window.AudioPlayer;
+    let nextMode = 'speakers';
+    if (ap.playMode === 'speakers') {
+      nextMode = 'microphone';
+    } else if (ap.playMode === 'microphone') {
+      nextMode = 'both';
+    }
+    
+    ap.setPlayMode(nextMode);
+    this._updatePlaybackModeUI();
+  }
+
+  _updatePlaybackModeUI() {
+    const ap = window.AudioPlayer;
+    if (!this.els.playbackModeLabel || !this.els.playbackModeIcon) return;
+    
+    if (ap.playMode === 'speakers') {
+      this.els.playbackModeIcon.textContent = '🔊';
+      this.els.playbackModeLabel.textContent = 'Hoparlör';
+      this.els.btnPlaybackMode.title = 'Oynatma Modu: Hoparlör (Değiştirmek için tıkla)';
+    } else if (ap.playMode === 'microphone') {
+      this.els.playbackModeIcon.textContent = '🎤';
+      this.els.playbackModeLabel.textContent = 'Mikrofon';
+      this.els.btnPlaybackMode.title = 'Oynatma Modu: Mikrofon (Değiştirmek için tıkla)';
+    } else if (ap.playMode === 'both') {
+      this.els.playbackModeIcon.textContent = '👥';
+      this.els.playbackModeLabel.textContent = 'Her İkisi';
+      this.els.btnPlaybackMode.title = 'Oynatma Modu: Her İkisi (Değiştirmek için tıkla)';
     }
   }
 

@@ -24,6 +24,11 @@
     setupKeyboardShortcuts();
     setupContextMenu();
     setupDragDropImport();
+    setupModals();
+    setupGlobalListeners();
+    setupHotbar();
+    setupCategoryModals();
+    await loadAudioDevices();
 
     console.log('[App] Initialization complete');
   });
@@ -46,11 +51,15 @@
       let sounds = [];
 
       if (window.soundsok && window.soundsok.sounds) {
-        sounds = await window.soundsok.sounds.getAll();
+        const res = await window.soundsok.sounds.list();
+        if (res && res.success && res.sounds) {
+          sounds = res.sounds;
+        }
       }
 
       window.SoundList.setSounds(sounds || []);
       window.Categories.updateCounts();
+      renderHotbar();
 
       console.log(`[App] Loaded ${(sounds || []).length} sounds`);
     } catch (err) {
@@ -138,7 +147,7 @@
       }
 
       // Open file dialog
-      const result = await window.soundsok.dialog.openAudioFiles();
+      const result = await window.soundsok.dialog.openFiles();
 
       if (!result || result.canceled || !result.filePaths || result.filePaths.length === 0) {
         return;
@@ -181,9 +190,14 @@
 
         // Save to database
         if (window.soundsok && window.soundsok.sounds) {
-          const saved = await window.soundsok.sounds.add(sound);
-          if (saved && saved.id) {
-            sound.id = saved.id;
+          const res = await window.soundsok.sounds.add(filePath);
+          if (res && res.success && res.sound) {
+            // Update the locally created sound object with the DB ID
+            sound.id = res.sound.id;
+            sound.name = res.sound.name;
+          } else {
+            console.warn('[App] Add sound failed:', res?.error);
+            continue; // Skip if failed (e.g. duplicate)
           }
         }
 
@@ -287,13 +301,40 @@
           adjustVolume(5);
           break;
 
-        case 'ArrowDown':
+         case 'ArrowDown':
           // Down Arrow → Volume down
           e.preventDefault();
           adjustVolume(-5);
           break;
 
+        case 'F4':
+          // F4 → Toggle playback mode
+          e.preventDefault();
+          if (window.Player) {
+            window.Player.togglePlaybackMode();
+          }
+          break;
+
         default:
+          // Alt + 1-0 for Hotbar
+          if (e.altKey && !isNaN(e.key) && e.key !== ' ') {
+            e.preventDefault();
+            const slotNum = e.key === '0' ? 10 : parseInt(e.key, 10);
+            if (slotNum >= 1 && slotNum <= 10) {
+              const slot = document.querySelector(`.hotbar-slot[data-slot="${slotNum}"]`);
+              if (slot) {
+                const soundId = slot.dataset.soundId;
+                if (soundId) {
+                  const sound = window.SoundList.getSoundById(soundId);
+                  if (sound) {
+                    window.AudioPlayer.loadAndPlay(sound.filePath, sound.id);
+                    window.Player.updateNowPlaying(sound);
+                  }
+                }
+              }
+            }
+            return;
+          }
           // Ctrl+F → Focus search
           if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
             e.preventDefault();
@@ -395,41 +436,11 @@
         break;
 
       case 'hotkey':
-        // Prompt for hotkey
-        const hotkey = prompt('Kısayol tuşu girin (örn: F1, Ctrl+1):');
-        if (hotkey && hotkey.trim()) {
-          window.SoundList.updateSound(sound.id, { hotkey: hotkey.trim() });
-
-          if (window.soundsok && window.soundsok.sounds) {
-            await window.soundsok.sounds.update(sound.id, { hotkey: hotkey.trim() });
-          }
-        }
+        openHotkeyModal(sound);
         break;
 
       case 'category':
-        // Simple category selection via prompt (will be replaced with a proper modal later)
-        const categories = window.Categories.categories;
-        if (categories.length === 0) {
-          alert('Henüz kategori oluşturulmamış. Önce bir kategori ekleyin.');
-          return;
-        }
-
-        const catList = categories.map((c, i) => `${i + 1}. ${c.name}`).join('\n');
-        const choice = prompt(`Kategori seçin:\n${catList}\n\nNumara girin:`);
-
-        if (choice) {
-          const idx = parseInt(choice, 10) - 1;
-          if (idx >= 0 && idx < categories.length) {
-            const targetCat = categories[idx];
-            window.SoundList.updateSound(sound.id, { categoryId: targetCat.id });
-
-            if (window.soundsok && window.soundsok.sounds) {
-              await window.soundsok.sounds.update(sound.id, { categoryId: targetCat.id });
-            }
-
-            window.Categories.updateCounts();
-          }
-        }
+        openCategoryMoveModal(sound);
         break;
 
       case 'delete':
@@ -471,6 +482,236 @@
   }
 
 
+  /* ─────────────── Modals & Settings ─────────────── */
+
+  let currentHotkeySound = null;
+  let recordedHotkey = '';
+
+  function setupModals() {
+    // Settings
+    const btnSettings = document.getElementById('btn-settings');
+    const settingsModal = document.getElementById('settings-modal');
+    const btnCloseSettings = document.getElementById('btn-close-settings-modal');
+    const toggleAutostart = document.getElementById('setting-autostart');
+
+    if (btnSettings) {
+      btnSettings.addEventListener('click', async () => {
+        await loadAudioDevices();
+        settingsModal.classList.remove('hidden');
+      });
+    }
+
+    if (btnCloseSettings) {
+      btnCloseSettings.addEventListener('click', () => {
+        settingsModal.classList.add('hidden');
+      });
+    }
+
+    if (toggleAutostart) {
+      toggleAutostart.addEventListener('change', async (e) => {
+        if (window.soundsok && window.soundsok.settings) {
+          await window.soundsok.settings.toggleStartup(e.target.checked);
+        }
+      });
+    }
+
+    // PTT Settings
+    const togglePtt = document.getElementById('setting-ptt-enable');
+    const selectPttKey = document.getElementById('setting-ptt-key');
+
+    if (togglePtt) {
+      togglePtt.checked = localStorage.getItem('pttEnable') === 'true';
+      togglePtt.addEventListener('change', (e) => {
+        localStorage.setItem('pttEnable', e.target.checked);
+      });
+    }
+
+    if (selectPttKey) {
+      selectPttKey.value = localStorage.getItem('pttKey') || 'V';
+      selectPttKey.addEventListener('change', (e) => {
+        localStorage.setItem('pttKey', e.target.value);
+      });
+    }
+
+    // Hotkey
+    const hotkeyModal = document.getElementById('hotkey-modal');
+    const btnCloseHotkey = document.getElementById('btn-close-hotkey-modal');
+    const btnClearHotkey = document.getElementById('btn-clear-hotkey');
+    const btnSaveHotkey = document.getElementById('btn-save-hotkey');
+    const recorder = document.getElementById('hotkey-recorder');
+
+    if (btnCloseHotkey) {
+      btnCloseHotkey.addEventListener('click', closeHotkeyModal);
+    }
+
+    if (btnClearHotkey) {
+      btnClearHotkey.addEventListener('click', async () => {
+        if (currentHotkeySound) {
+          await assignHotkey(currentHotkeySound.id, null);
+          closeHotkeyModal();
+        }
+      });
+    }
+
+    if (btnSaveHotkey) {
+      btnSaveHotkey.addEventListener('click', async () => {
+        if (currentHotkeySound && recordedHotkey) {
+          // Check conflict
+          if (window.soundsok && window.soundsok.hotkeys) {
+            const result = await window.soundsok.hotkeys.check(recordedHotkey);
+            if (result.success && result.conflict && result.conflict.id !== currentHotkeySound.id) {
+              const confirmMsg = `Bu kısayol zaten "${result.conflict.name}" sesine atanmış. Devam ederseniz eski atama silinecek. Onaylıyor musunuz?`;
+              if (!confirm(confirmMsg)) {
+                return;
+              }
+            }
+          }
+          await assignHotkey(currentHotkeySound.id, recordedHotkey);
+          closeHotkeyModal();
+        }
+      });
+    }
+
+    if (recorder) {
+      recorder.addEventListener('click', () => {
+        recorder.classList.add('recording');
+        document.getElementById('hotkey-display').textContent = 'Tuşlara basın...';
+        
+        const keydownHandler = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          let keys = [];
+          if (e.ctrlKey) keys.push('CommandOrControl');
+          if (e.altKey) keys.push('Alt');
+          if (e.shiftKey) keys.push('Shift');
+          
+          if (!['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
+            // Electron hotkey format uses capital letters
+            let key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+            keys.push(key);
+            
+            recordedHotkey = keys.join('+');
+            document.getElementById('hotkey-display').textContent = recordedHotkey;
+            recorder.classList.remove('recording');
+            btnSaveHotkey.disabled = false;
+            
+            document.removeEventListener('keydown', keydownHandler);
+          }
+        };
+        
+        document.addEventListener('keydown', keydownHandler);
+        
+        // Cancel recording if clicked outside
+        const cancelRecording = (e) => {
+          if (!recorder.contains(e.target)) {
+            recorder.classList.remove('recording');
+            if (!recordedHotkey) {
+              document.getElementById('hotkey-display').textContent = 'Kısayol yok';
+            } else {
+              document.getElementById('hotkey-display').textContent = recordedHotkey;
+            }
+            document.removeEventListener('keydown', keydownHandler);
+            document.removeEventListener('click', cancelRecording);
+          }
+        };
+        
+        // Use a small timeout so the current click doesn't trigger cancel
+        setTimeout(() => document.addEventListener('click', cancelRecording), 10);
+      });
+    }
+  }
+
+  function openHotkeyModal(sound) {
+    currentHotkeySound = sound;
+    recordedHotkey = sound.hotkey || '';
+    
+    document.getElementById('hotkey-sound-name').textContent = sound.name;
+    document.getElementById('hotkey-display').textContent = recordedHotkey || 'Kısayol yok';
+    document.getElementById('btn-save-hotkey').disabled = true;
+    document.getElementById('hotkey-modal').classList.remove('hidden');
+  }
+
+  function closeHotkeyModal() {
+    document.getElementById('hotkey-modal').classList.add('hidden');
+    currentHotkeySound = null;
+    recordedHotkey = '';
+  }
+
+  async function assignHotkey(soundId, hotkey) {
+    if (window.soundsok && window.soundsok.hotkeys) {
+      const res = await window.soundsok.hotkeys.assign(soundId, hotkey);
+      if (res.success && res.sound) {
+        window.SoundList.updateSound(soundId, { hotkey: res.sound.hotkey });
+        // We might also need to update the other sound if there was a conflict,
+        // but re-loading all sounds is safer to ensure consistency.
+        const resAll = await window.soundsok.sounds.list();
+        if (resAll && resAll.success && resAll.sounds) {
+          window.SoundList.setSounds(resAll.sounds);
+        }
+      }
+    }
+  }
+
+  /* ─────────────── Global Listeners ─────────────── */
+
+  function setupGlobalListeners() {
+    if (window.soundsok && window.soundsok.playback) {
+      window.soundsok.playback.onPlayHotkey((sound) => {
+        console.log('[App] Playing from hotkey:', sound.name);
+        window.AudioPlayer.loadAndPlay(sound.filePath, sound.id);
+        window.Player.updateNowPlaying(sound);
+      });
+    }
+
+    if (window.soundsok && window.soundsok.cli) {
+      // CLI: Play sound by ID
+      window.soundsok.cli.onPlayId((id) => {
+        if (!window.SoundList) return;
+        const sound = window.SoundList.getSoundById(id);
+        if (sound) {
+          window.AudioPlayer.loadAndPlay(sound.filePath, sound.id);
+          window.Player.updateNowPlaying(sound);
+        }
+      });
+
+      // CLI: Play hotbar slot
+      window.soundsok.cli.onPlaySlot((slotNum) => {
+        const slot = document.querySelector(`.hotbar-slot[data-slot="${slotNum}"]`);
+        if (slot) {
+          const soundId = slot.dataset.soundId;
+          if (soundId && window.SoundList) {
+            const sound = window.SoundList.getSoundById(soundId);
+            if (sound) {
+              window.AudioPlayer.loadAndPlay(sound.filePath, sound.id);
+              window.Player.updateNowPlaying(sound);
+            }
+          }
+        }
+      });
+
+      // CLI: Stop playback
+      window.soundsok.cli.onStop(() => {
+        window.AudioPlayer.stop();
+        window.Player.resetUI();
+      });
+
+      // CLI: Toggle play/pause
+      window.soundsok.cli.onToggle(() => {
+        window.AudioPlayer.togglePlayPause();
+      });
+
+      // CLI: Change volume
+      window.soundsok.cli.onVolume((vol) => {
+        if (window.Player) {
+          const slider = window.Player.els.volumeSlider;
+          if (slider) slider.value = vol;
+          window.Player._handleVolumeChange(vol);
+        }
+      });
+    }
+  }
+
   /* ─────────────── Utility Functions ─────────────── */
 
   /**
@@ -501,6 +742,341 @@
    */
   function generateId() {
     return 'snd_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  /* ─────────────── Hotbar (Quick Access) ─────────────── */
+
+  function setupHotbar() {
+    const slots = document.querySelectorAll('.hotbar-slot');
+    
+    slots.forEach(slot => {
+      const slotNum = parseInt(slot.dataset.slot, 10);
+      
+      // Drag & Drop events
+      slot.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        slot.classList.add('drag-over');
+      });
+      
+      slot.addEventListener('dragleave', () => {
+        slot.classList.remove('drag-over');
+      });
+      
+      slot.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        slot.classList.remove('drag-over');
+        
+        const soundId = e.dataTransfer.getData('text/plain');
+        if (soundId) {
+          await assignSoundToHotbar(soundId, slotNum);
+        }
+      });
+      
+      // Click to play
+      slot.addEventListener('click', () => {
+        const soundId = slot.dataset.soundId;
+        if (soundId) {
+          const sound = window.SoundList.getSoundById(soundId);
+          if (sound) {
+            window.AudioPlayer.loadAndPlay(sound.filePath, sound.id);
+            window.Player.updateNowPlaying(sound);
+          }
+        }
+      });
+      
+      // Clear button
+      const clearBtn = slot.querySelector('.slot-clear');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', async (e) => {
+          e.stopPropagation(); // Prevent playing
+          const soundId = slot.dataset.soundId;
+          if (soundId) {
+            await removeSoundFromHotbar(soundId);
+          }
+        });
+      }
+    });
+
+    renderHotbar();
+  }
+
+  function renderHotbar() {
+    const slots = document.querySelectorAll('.hotbar-slot');
+    const sounds = window.SoundList.sounds;
+    
+    // Reset all slots first
+    slots.forEach(slot => {
+      slot.classList.remove('filled');
+      slot.removeAttribute('data-sound-id');
+      const nameEl = slot.querySelector('.slot-name');
+      if (nameEl) nameEl.textContent = 'Boş';
+      const clearBtn = slot.querySelector('.slot-clear');
+      if (clearBtn) clearBtn.classList.add('hidden');
+    });
+    
+    // Populate active slots
+    sounds.forEach(sound => {
+      if (sound.hotbarSlot && sound.hotbarSlot >= 1 && sound.hotbarSlot <= 10) {
+        const slot = document.querySelector(`.hotbar-slot[data-slot="${sound.hotbarSlot}"]`);
+        if (slot) {
+          slot.classList.add('filled');
+          slot.dataset.soundId = sound.id;
+          const nameEl = slot.querySelector('.slot-name');
+          if (nameEl) {
+            nameEl.textContent = sound.name;
+            nameEl.title = sound.name;
+          }
+          const clearBtn = slot.querySelector('.slot-clear');
+          if (clearBtn) clearBtn.classList.remove('hidden');
+        }
+      }
+    });
+  }
+
+  async function assignSoundToHotbar(soundId, slotNum) {
+    // If another sound was in this slot, clear it first
+    const sounds = window.SoundList.sounds;
+    const existing = sounds.find(s => s.hotbarSlot === slotNum);
+    if (existing && String(existing.id) !== String(soundId)) {
+      await removeSoundFromHotbar(existing.id);
+    }
+    
+    if (window.soundsok && window.soundsok.sounds) {
+      const res = await window.soundsok.sounds.update(soundId, { hotbarSlot: slotNum });
+      if (res && res.success && res.sound) {
+        window.SoundList.updateSound(soundId, { hotbarSlot: slotNum });
+        renderHotbar();
+      }
+    }
+  }
+
+  async function removeSoundFromHotbar(soundId) {
+    if (window.soundsok && window.soundsok.sounds) {
+      const res = await window.soundsok.sounds.update(soundId, { hotbarSlot: null });
+      if (res && res.success && res.sound) {
+        window.SoundList.updateSound(soundId, { hotbarSlot: null });
+        renderHotbar();
+      }
+    }
+  }
+
+  /* ─────────────── Category Management Modals ─────────────── */
+
+  let currentCategoryMoveSound = null;
+  let currentEditCategory = null;
+  let selectedCategoryColor = '';
+
+  function setupCategoryModals() {
+    // Move Modal
+    const moveModal = document.getElementById('category-move-modal');
+    const btnCloseMove = document.getElementById('btn-close-catmove-modal');
+    
+    if (btnCloseMove) {
+      btnCloseMove.addEventListener('click', () => moveModal.classList.add('hidden'));
+    }
+    
+    // Edit Modal
+    const editModal = document.getElementById('category-edit-modal');
+    const btnCloseEdit = document.getElementById('btn-close-catedit-modal');
+    const btnSaveEdit = document.getElementById('btn-save-catedit');
+    const btnDeleteEdit = document.getElementById('btn-delete-catedit');
+    const nameInput = document.getElementById('catedit-name-input');
+    
+    if (btnCloseEdit) {
+      btnCloseEdit.addEventListener('click', () => editModal.classList.add('hidden'));
+    }
+    
+    if (btnSaveEdit) {
+      btnSaveEdit.addEventListener('click', async () => {
+        if (currentEditCategory && nameInput) {
+          const newName = nameInput.value.trim();
+          if (newName) {
+            if (window.soundsok && window.soundsok.categories) {
+              const res = await window.soundsok.categories.update(currentEditCategory.id, {
+                name: newName,
+                color: selectedCategoryColor
+              });
+              if (res && res.success) {
+                await window.Categories.loadCategories();
+                window.SoundList.render();
+              }
+            }
+            editModal.classList.add('hidden');
+          }
+        }
+      });
+    }
+    
+    if (btnDeleteEdit) {
+      btnDeleteEdit.addEventListener('click', async () => {
+        if (currentEditCategory) {
+          editModal.classList.add('hidden');
+          await window.Categories.removeCategory(currentEditCategory.id);
+        }
+      });
+    }
+    
+    // Bind global function for editing category
+    window.openCategoryEditModal = (category) => {
+      currentEditCategory = category;
+      selectedCategoryColor = category.color || '#8b5cf6';
+      
+      if (nameInput) nameInput.value = category.name;
+      
+      const picker = document.getElementById('catedit-color-picker');
+      if (picker) {
+        picker.innerHTML = '';
+        const colors = window.Categories.colors;
+        colors.forEach(color => {
+          const option = document.createElement('div');
+          option.className = 'color-option';
+          option.style.backgroundColor = color;
+          if (color === selectedCategoryColor) {
+            option.classList.add('selected');
+          }
+          option.addEventListener('click', () => {
+            picker.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+            option.classList.add('selected');
+            selectedCategoryColor = color;
+          });
+          picker.appendChild(option);
+        });
+      }
+      
+      editModal.classList.remove('hidden');
+    };
+  }
+
+  function openCategoryMoveModal(sound) {
+    currentCategoryMoveSound = sound;
+    document.getElementById('catmove-sound-name').textContent = sound.name;
+    
+    const list = document.getElementById('catmove-list');
+    if (list) {
+      list.innerHTML = '';
+      
+      // Add 'Uncategorized' option
+      const allItem = document.createElement('div');
+      allItem.className = 'catmove-item';
+      allItem.innerHTML = `
+        <span class="category-dot" style="background: #8b5cf6;"></span>
+        <span>Kategorisiz (Tüm Sesler)</span>
+      `;
+      allItem.addEventListener('click', async () => {
+        await assignSoundToCategory(sound.id, null);
+        document.getElementById('category-move-modal').classList.add('hidden');
+      });
+      list.appendChild(allItem);
+      
+      // Load user categories
+      const categories = window.Categories.categories;
+      categories.forEach(cat => {
+        const item = document.createElement('div');
+        item.className = 'catmove-item';
+        item.innerHTML = `
+          <span class="category-dot" style="background: ${cat.color};"></span>
+          <span>${cat.name}</span>
+        `;
+        item.addEventListener('click', async () => {
+          await assignSoundToCategory(sound.id, cat.id);
+          document.getElementById('category-move-modal').classList.add('hidden');
+        });
+        list.appendChild(item);
+      });
+    }
+    
+    document.getElementById('category-move-modal').classList.remove('hidden');
+  }
+
+  async function assignSoundToCategory(soundId, categoryId) {
+    if (window.soundsok && window.soundsok.sounds) {
+      const res = await window.soundsok.sounds.update(soundId, { categoryId: categoryId });
+      if (res && res.success && res.sound) {
+        window.SoundList.updateSound(soundId, { categoryId: categoryId });
+        
+        // Reload sounds to ensure correctness
+        const allSounds = await window.soundsok.sounds.list();
+        if (allSounds && allSounds.success && allSounds.sounds) {
+          window.SoundList.setSounds(allSounds.sounds);
+        }
+        window.Categories.updateCounts();
+      }
+    }
+  }
+
+  /* ─────────────── Audio Devices ─────────────── */
+
+  let _audioDeviceListenersBound = false;
+
+  async function loadAudioDevices() {
+    try {
+      const speakerSelect = document.getElementById('setting-speaker-device');
+      const micSelect = document.getElementById('setting-mic-device');
+      if (!speakerSelect || !micSelect) return;
+      
+      // Request temporary microphone permission so device labels are visible
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) {
+        console.warn('[App] Media devices permission denied or not supported:', e);
+      }
+      
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const outputs = devices.filter(d => d.kind === 'audiooutput');
+      
+      speakerSelect.innerHTML = '';
+      micSelect.innerHTML = '';
+      
+      // Default Speakers option
+      const optDefaultSpeaker = document.createElement('option');
+      optDefaultSpeaker.value = 'default';
+      optDefaultSpeaker.textContent = 'Varsayılan Sistem Hoparlörü';
+      speakerSelect.appendChild(optDefaultSpeaker);
+      
+      // Select Microphone option
+      const optSelectMic = document.createElement('option');
+      optSelectMic.value = '';
+      optSelectMic.textContent = 'Seçilmedi (Discord/Kanal oynatma kapalı)';
+      micSelect.appendChild(optSelectMic);
+      
+      outputs.forEach(device => {
+        const optSpeaker = document.createElement('option');
+        optSpeaker.value = device.deviceId;
+        optSpeaker.textContent = device.label || `Çıkış Aygıtı (${device.deviceId.slice(0, 5)}...)`;
+        speakerSelect.appendChild(optSpeaker);
+        
+        const optMic = document.createElement('option');
+        optMic.value = device.deviceId;
+        optMic.textContent = device.label || `Sanal Giriş (${device.deviceId.slice(0, 5)}...)`;
+        micSelect.appendChild(optMic);
+      });
+      
+      // Load saved settings
+      speakerSelect.value = localStorage.getItem('speakerDeviceId') || 'default';
+      micSelect.value = localStorage.getItem('micDeviceId') || '';
+      
+      // Listen to change events — only bind once
+      if (!_audioDeviceListenersBound) {
+        _audioDeviceListenersBound = true;
+        
+        speakerSelect.addEventListener('change', async (e) => {
+          localStorage.setItem('speakerDeviceId', e.target.value);
+          await window.AudioPlayer.setSpeakerDevice(e.target.value);
+        });
+        
+        micSelect.addEventListener('change', async (e) => {
+          localStorage.setItem('micDeviceId', e.target.value);
+          await window.AudioPlayer.setMicDevice(e.target.value);
+        });
+      }
+      
+      // Initialize player engine settings
+      await window.AudioPlayer.setSpeakerDevice(speakerSelect.value);
+      await window.AudioPlayer.setMicDevice(micSelect.value);
+      
+    } catch (err) {
+      console.error('[App] Failed to load audio devices:', err);
+    }
   }
 
 })();

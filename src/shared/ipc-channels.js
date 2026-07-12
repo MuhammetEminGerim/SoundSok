@@ -31,6 +31,14 @@ const APP_CLOSE    = 'app:close';
 const CATEGORY_ADD    = 'category:add';
 const CATEGORY_REMOVE = 'category:remove';
 const CATEGORY_LIST   = 'category:list';
+const CATEGORY_UPDATE = 'category:update';
+
+// ── Hotkeys & Settings ───────────────────────────────────────────────────────
+const HOTKEY_ASSIGN   = 'hotkey:assign';
+const HOTKEY_CHECK    = 'hotkey:check';
+const APP_TOGGLE_STARTUP = 'app:toggle-startup';
+const PTT_PRESS       = 'ptt:press';
+const PTT_RELEASE     = 'ptt:release';
 
 module.exports = {
   SOUND_ADD,
@@ -53,4 +61,11 @@ module.exports = {
   CATEGORY_ADD,
   CATEGORY_REMOVE,
   CATEGORY_LIST,
+  CATEGORY_UPDATE,
+  
+  HOTKEY_ASSIGN,
+  HOTKEY_CHECK,
+  APP_TOGGLE_STARTUP,
+  PTT_PRESS,
+  PTT_RELEASE,
 };

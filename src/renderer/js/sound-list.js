@@ -66,8 +66,8 @@ class SoundListManager {
    * @param {string} id
    */
   removeSound(id) {
-    this.sounds = this.sounds.filter(s => s.id !== id);
-    this.filteredSounds = this.filteredSounds.filter(s => s.id !== id);
+    this.sounds = this.sounds.filter(s => String(s.id) !== String(id));
+    this.filteredSounds = this.filteredSounds.filter(s => String(s.id) !== String(id));
     this.render();
   }
 
@@ -77,11 +77,11 @@ class SoundListManager {
    * @param {Object} updates
    */
   updateSound(id, updates) {
-    const idx = this.sounds.findIndex(s => s.id === id);
+    const idx = this.sounds.findIndex(s => String(s.id) === String(id));
     if (idx !== -1) {
       this.sounds[idx] = { ...this.sounds[idx], ...updates };
     }
-    const fIdx = this.filteredSounds.findIndex(s => s.id === id);
+    const fIdx = this.filteredSounds.findIndex(s => String(s.id) === String(id));
     if (fIdx !== -1) {
       this.filteredSounds[fIdx] = { ...this.filteredSounds[fIdx], ...updates };
     }
@@ -112,7 +112,7 @@ class SoundListManager {
     if (!categoryId) {
       this.filteredSounds = [...this.sounds];
     } else {
-      this.filteredSounds = this.sounds.filter(s => s.categoryId === categoryId);
+      this.filteredSounds = this.sounds.filter(s => String(s.categoryId) === String(categoryId));
     }
     this.applySorting();
     this.render();
@@ -203,6 +203,17 @@ class SoundListManager {
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
     card.setAttribute('aria-label', `${sound.name} oynat`);
+    card.setAttribute('draggable', 'true');
+
+    // Drag start for Hotbar assignment
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', sound.id);
+      card.classList.add('dragging');
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+    });
 
     // Mark if currently playing
     if (window.AudioPlayer && window.AudioPlayer.currentSoundId === sound.id && window.AudioPlayer.isPlaying) {
@@ -218,7 +229,13 @@ class SoundListManager {
     const icon = this.getFileIcon(ext);
     const duration = this.formatDuration(sound.duration || 0);
 
+    let hotkeyHtml = '';
+    if (sound.hotkey) {
+      hotkeyHtml = `<div class="hotkey-badge" title="Kısayol: ${sound.hotkey}">${sound.hotkey}</div>`;
+    }
+
     card.innerHTML = `
+      ${hotkeyHtml}
       <div class="sound-card-icon">${icon}</div>
       <span class="sound-card-name truncate" title="${this._escapeHtml(sound.name)}">${this._escapeHtml(sound.name)}</span>
       <div class="sound-card-meta">
@@ -269,8 +286,8 @@ class SoundListManager {
       return;
     }
 
-    // If clicking the currently playing sound, toggle
-    if (window.AudioPlayer.currentSoundId === sound.id) {
+    // If clicking the currently playing or paused sound, toggle
+    if (window.AudioPlayer.currentSoundId === sound.id && window.AudioPlayer.hasActiveSound()) {
       window.AudioPlayer.togglePlayPause();
       return;
     }
@@ -371,6 +388,8 @@ class SoundListManager {
 
     app.addEventListener('dragenter', (e) => {
       e.preventDefault();
+      // Only trigger overlay for actual files dragged from outside
+      if (!e.dataTransfer.types.includes('Files')) return;
       dragCounter++;
       if (dragCounter === 1) {
         overlay.classList.remove('hidden');
@@ -379,6 +398,7 @@ class SoundListManager {
 
     app.addEventListener('dragleave', (e) => {
       e.preventDefault();
+      if (!e.dataTransfer.types.includes('Files')) return;
       dragCounter--;
       if (dragCounter <= 0) {
         dragCounter = 0;
@@ -388,11 +408,13 @@ class SoundListManager {
 
     app.addEventListener('dragover', (e) => {
       e.preventDefault();
+      if (!e.dataTransfer.types.includes('Files')) return;
       e.dataTransfer.dropEffect = 'copy';
     });
 
     app.addEventListener('drop', (e) => {
       e.preventDefault();
+      if (!e.dataTransfer.types.includes('Files')) return;
       dragCounter = 0;
       overlay.classList.add('hidden');
 
@@ -481,7 +503,7 @@ class SoundListManager {
    * @returns {Object|undefined}
    */
   getSoundById(id) {
-    return this.sounds.find(s => s.id === id);
+    return this.sounds.find(s => String(s.id) === String(id));
   }
 
   /**
@@ -490,7 +512,7 @@ class SoundListManager {
    * @returns {number}
    */
   getSoundIndex(id) {
-    return this.filteredSounds.findIndex(s => s.id === id);
+    return this.filteredSounds.findIndex(s => String(s.id) === String(id));
   }
 
   /**

@@ -8,3 +8,8 @@ soundsok.db
 soundsok.db-wal
 soundsok.db-shm
 .DS_Store
+*.exe
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

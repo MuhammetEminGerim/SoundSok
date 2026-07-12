@@ -57,6 +57,11 @@
       <aside id="sidebar">
         <div class="sidebar-header">
           <h2 class="sidebar-title">Kategoriler</h2>
+          <button id="btn-settings" class="btn-icon" aria-label="Ayarlar" title="Ayarlar" style="margin-right: 8px;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 12a4 4 0 100-8 4 4 0 000 8zM14.5 8h-1.3c-.2-.9-.6-1.7-1.2-2.3l.9-.9c.3-.3.3-.8 0-1.1l-1-1c-.3-.3-.8-.3-1.1 0l-.9.9c-.6-.6-1.4-1-2.3-1.2V1.1c0-.4-.3-.8-.8-.8H6.9c-.4 0-.8.3-.8.8v1.3c-.9.2-1.7.6-2.3 1.2l-.9-.9c-.3-.3-.8-.3-1.1 0l-1 1c-.3.3-.3.8 0 1.1l.9.9c-.6.6-1 1.4-1.2 2.3H1.1c-.4 0-.8.3-.8.8v1.8c0 .4.3.8.8.8h1.3c.2.9.6 1.7 1.2 2.3l-.9.9c-.3.3-.3.8 0 1.1l1 1c.3.3.8.3 1.1 0l.9-.9c.6.6 1.4 1 2.3 1.2v1.3c0 .4.3.8.8.8h1.8c.4 0 .8-.3.8-.8v-1.3c.9-.2 1.7-.6 2.3-1.2l.9.9c.3.3.8.3 1.1 0l1-1c.3-.3.3-.8 0-1.1l-.9-.9c.6-.6 1-1.4 1.2-2.3h1.3c.4 0 .8-.3.8-.8V6.9c0-.4-.3-.8-.8-.8z" fill="currentColor" opacity="0.8"/>
+            </svg>
+          </button>
           <button id="btn-add-category" class="btn-icon" aria-label="Kategori ekle" title="Kategori ekle">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -127,6 +132,64 @@
                 <option value="duration-asc">Süreye göre (Kısa)</option>
                 <option value="duration-desc">Süreye göre (Uzun)</option>
               </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════ -->
+        <!-- HOTBAR PANEL                                        -->
+        <!-- ═══════════════════════════════════════════════════ -->
+        <div id="hotbar" class="hotbar-panel">
+          <div class="hotbar-slots">
+            <div class="hotbar-slot" data-slot="1">
+              <span class="slot-badge">Alt+1</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
+            </div>
+            <div class="hotbar-slot" data-slot="2">
+              <span class="slot-badge">Alt+2</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
+            </div>
+            <div class="hotbar-slot" data-slot="3">
+              <span class="slot-badge">Alt+3</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
+            </div>
+            <div class="hotbar-slot" data-slot="4">
+              <span class="slot-badge">Alt+4</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
+            </div>
+            <div class="hotbar-slot" data-slot="5">
+              <span class="slot-badge">Alt+5</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
+            </div>
+            <div class="hotbar-slot" data-slot="6">
+              <span class="slot-badge">Alt+6</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
+            </div>
+            <div class="hotbar-slot" data-slot="7">
+              <span class="slot-badge">Alt+7</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
+            </div>
+            <div class="hotbar-slot" data-slot="8">
+              <span class="slot-badge">Alt+8</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
+            </div>
+            <div class="hotbar-slot" data-slot="9">
+              <span class="slot-badge">Alt+9</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
+            </div>
+            <div class="hotbar-slot" data-slot="10">
+              <span class="slot-badge">Alt+0</span>
+              <span class="slot-name">Boş</span>
+              <button class="slot-clear hidden" title="Kaldır">&times;</button>
             </div>
           </div>
         </div>
@@ -212,11 +275,10 @@
 
         <!-- Volume Controls -->
         <div class="player-volume">
-          <div id="playback-mode" class="playback-mode" title="Oynatma modu">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M2 5h3l4-3v12l-4-3H2V5z" fill="currentColor" opacity="0.7"/>
-            </svg>
-          </div>
+          <button id="btn-playback-mode" class="playback-mode-btn" title="Oynatma Modu (Tıkla Değiştir)">
+            <span id="playback-mode-icon" class="mode-icon">🔊</span>
+            <span id="playback-mode-label" class="mode-label">Hoparlör</span>
+          </button>
           <button id="btn-volume" class="btn-icon volume-btn" aria-label="Ses seviyesi" title="Ses seviyesi">
             <svg id="icon-volume-on" width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M2 6.5h3l4-3.5v12L5 11.5H2v-5z" fill="currentColor"/>
@@ -278,6 +340,136 @@
         </svg>
         <span>Sil</span>
       </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- HOTKEY MODAL                                        -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="hotkey-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Kısayol Ata</h3>
+          <button id="btn-close-hotkey-modal" class="btn-icon" aria-label="Kapat">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1.5 1.5L10.5 10.5M10.5 1.5L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-text">Ses: <strong id="hotkey-sound-name"></strong></p>
+          <div id="hotkey-recorder" class="hotkey-recorder">
+            <span id="hotkey-display" class="hotkey-display">Bir tuşa basın...</span>
+          </div>
+          <p class="modal-hint">Aramayı veya uygulamayı kullanırken çakışmaması için Ctrl, Alt veya Shift ile birlikte bir tuş kullanmanız önerilir.</p>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-clear-hotkey" class="btn btn-ghost">Kısayolu Temizle</button>
+          <button id="btn-save-hotkey" class="btn btn-primary" disabled>Kaydet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- SETTINGS MODAL                                      -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="settings-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Ayarlar</h3>
+          <button id="btn-close-settings-modal" class="btn-icon" aria-label="Kapat">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1.5 1.5L10.5 10.5M10.5 1.5L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+         <div class="modal-body">
+           <label class="setting-item">
+             <span class="setting-label">Windows başladığında otomatik başlat</span>
+             <input type="checkbox" id="setting-autostart" class="toggle-switch">
+           </label>
+           
+           <div class="form-group" style="margin-top: 16px;">
+             <label for="setting-speaker-device" class="form-label">Hoparlör Cihazı (Sesi senin duyacağın cihaz)</label>
+             <select id="setting-speaker-device" class="form-select" style="width: 100%; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color);"></select>
+           </div>
+           
+           <div class="form-group" style="margin-top: 16px;">
+             <label for="setting-mic-device" class="form-label">Mikrofon / Sanal Kablo Cihazı (Discord'a gidecek cihaz)</label>
+             <select id="setting-mic-device" class="form-select" style="width: 100%; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color);"></select>
+           </div>
+
+           <label class="setting-item" style="margin-top: 16px;">
+             <span class="setting-label">Bas-Konuş (PTT) Otomasyonu</span>
+             <input type="checkbox" id="setting-ptt-enable" class="toggle-switch">
+           </label>
+
+           <div class="form-group" style="margin-top: 16px;">
+             <label for="setting-ptt-key" class="form-label">Bas-Konuş Tuşu</label>
+             <select id="setting-ptt-key" class="form-select" style="width: 100%; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color);">
+               <option value="V">V</option>
+               <option value="CTRL">CTRL</option>
+               <option value="SHIFT">SHIFT</option>
+               <option value="CAPSLOCK">Caps Lock</option>
+               <option value="SPACE">Space (Boşluk)</option>
+               <option value="ALT">ALT</option>
+             </select>
+           </div>
+         </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- CATEGORY MOVE MODAL                                 -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="category-move-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Kategoriye Taşı</h3>
+          <button id="btn-close-catmove-modal" class="btn-icon" aria-label="Kapat">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1.5 1.5L10.5 10.5M10.5 1.5L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-text">Ses: <strong id="catmove-sound-name"></strong></p>
+          <div id="catmove-list" class="catmove-list">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- CATEGORY EDIT MODAL                                 -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="category-edit-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">Kategoriyi Düzenle</h3>
+          <button id="btn-close-catedit-modal" class="btn-icon" aria-label="Kapat">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1.5 1.5L10.5 10.5M10.5 1.5L1.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="catedit-name-input" class="form-label">Kategori Adı</label>
+            <input type="text" id="catedit-name-input" class="form-input" placeholder="Kategori adı..." maxlength="40">
+          </div>
+          <div class="form-group" style="margin-top: 16px;">
+            <label class="form-label">Kategori Rengi</label>
+            <div id="catedit-color-picker" class="color-picker-grid">
+              <!-- Colors rendered by JS -->
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-delete-catedit" class="btn btn-danger-outline" style="margin-right: auto;">Kategoriyi Sil</button>
+          <button id="btn-save-catedit" class="btn btn-primary">Kaydet</button>
+        </div>
+      </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════ -->
