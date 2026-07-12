@@ -75,6 +75,13 @@ function handleCliArguments(argv) {
     mainWindow.webContents.send('cli:volume', vol);
     return;
   }
+
+  const seekIdx = argv.indexOf('--seek');
+  if (seekIdx !== -1 && seekIdx + 1 < argv.length) {
+    const percent = parseInt(argv[seekIdx + 1], 10);
+    mainWindow.webContents.send('cli:seek', percent);
+    return;
+  }
 }
 
 function compilePttHelper() {

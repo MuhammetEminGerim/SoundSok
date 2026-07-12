@@ -27,6 +27,9 @@ class AudioPlayerEngine {
     /** @type {number} 0-1 */
     this._volume = parseFloat(localStorage.getItem('volume') || '0.8');
 
+    /** @type {number} 0-1 */
+    this._currentSoundVolume = 1.0;
+
     /** @type {boolean} */
     this._muted = false;
 
@@ -55,8 +58,7 @@ class AudioPlayerEngine {
     this.onStateChange = null;
 
     // Apply initial volume
-    this.audioSpeakers.volume = this._volume;
-    this.audioMic.volume = this._volume;
+    this._updateActualVolumes();
 
     // Bind internal event listeners
     this._bindEvents();
@@ -207,6 +209,17 @@ class AudioPlayerEngine {
 
       this.currentSoundId = soundId;
 
+      // Retrieve individual sound volume
+      let soundVolume = 1.0;
+      if (window.SoundList) {
+        const soundItem = window.SoundList.getSoundById(soundId);
+        if (soundItem && typeof soundItem.volume === 'number') {
+          soundVolume = soundItem.volume;
+        }
+      }
+      this._currentSoundVolume = soundVolume;
+      this._updateActualVolumes();
+
       // Normalize path for Electron / file:// protocol
       let src = filePath;
       if (!src.startsWith('file://') && !src.startsWith('http')) {
@@ -334,6 +347,13 @@ class AudioPlayerEngine {
     if (playMic && this.micDeviceId) this.audioMic.currentTime = targetTime;
   }
 
+  _updateActualVolumes() {
+    const soundVol = typeof this._currentSoundVolume === 'number' ? this._currentSoundVolume : 1.0;
+    const finalVol = this._volume * soundVol;
+    this.audioSpeakers.volume = finalVol;
+    this.audioMic.volume = finalVol;
+  }
+
   /**
    * Set volume (0 to 1).
    * @param {number} value — 0.0 to 1.0
@@ -342,8 +362,7 @@ class AudioPlayerEngine {
     this._volume = Math.max(0, Math.min(1, value));
     localStorage.setItem('volume', this._volume.toString());
 
-    this.audioSpeakers.volume = this._volume;
-    this.audioMic.volume = this._volume;
+    this._updateActualVolumes();
 
     if (this._muted && this._volume > 0) {
       this._muted = false;

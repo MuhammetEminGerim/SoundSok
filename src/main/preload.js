@@ -120,6 +120,7 @@ contextBridge.exposeInMainWorld('soundsok', {
     onStop: (callback) => ipcRenderer.on('cli:stop', () => callback()),
     onToggle: (callback) => ipcRenderer.on('cli:toggle', () => callback()),
     onVolume: (callback) => ipcRenderer.on('cli:volume', (_event, vol) => callback(vol)),
+    onSeek: (callback) => ipcRenderer.on('cli:seek', (_event, percent) => callback(percent)),
   },
 
   // ── Native Dialogs ─────────────────────────────────────────────────────
