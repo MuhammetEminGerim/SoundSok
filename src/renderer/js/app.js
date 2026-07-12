@@ -421,18 +421,7 @@
         break;
 
       case 'edit':
-        // Prompt for new name
-        const newName = prompt('Yeni ses adı:', sound.name);
-        if (newName && newName.trim()) {
-          sound.name = newName.trim();
-          window.SoundList.updateSound(sound.id, { name: sound.name });
-
-          if (window.soundsok && window.soundsok.sounds) {
-            await window.soundsok.sounds.update(sound.id, { name: sound.name });
-          }
-
-          window.SoundList.render();
-        }
+        openSoundRenameModal(sound);
         break;
 
       case 'hotkey':
@@ -440,26 +429,7 @@
         break;
 
       case 'volume':
-        try {
-          console.log('[App] Opening volume prompt for:', sound.name);
-          const currentVol = typeof sound.volume === 'number' ? Math.round(sound.volume * 100) : 80;
-          const inputVol = prompt(`"${sound.name}" sesinin çalma seviyesini girin (0 - 100):`, String(currentVol));
-          console.log('[App] Volume prompt response:', inputVol);
-          if (inputVol !== null) {
-            const val = parseInt(inputVol, 10);
-            if (!isNaN(val) && val >= 0 && val <= 100) {
-              const normalizedVol = val / 100;
-              sound.volume = normalizedVol;
-              window.SoundList.updateSound(sound.id, { volume: normalizedVol });
-              if (window.soundsok && window.soundsok.sounds) {
-                await window.soundsok.sounds.update(sound.id, { volume: normalizedVol });
-              }
-              console.log('[App] Sound volume updated to:', normalizedVol);
-            }
-          }
-        } catch (err) {
-          console.error('[App] Error during volume change prompt:', err);
-        }
+        openSoundVolumeModal(sound);
         break;
 
       case 'category':
@@ -590,6 +560,65 @@
       });
     }
 
+    // Sound Volume Modal Setup
+    const volumeModal = document.getElementById('sound-volume-modal');
+    const btnCloseVolume = document.getElementById('btn-close-volume-modal');
+    const sliderVolume = document.getElementById('volume-sound-slider');
+    const displayVolume = document.getElementById('volume-sound-display');
+    const btnSaveVolume = document.getElementById('btn-save-sound-volume');
+
+    if (btnCloseVolume) {
+      btnCloseVolume.addEventListener('click', closeSoundVolumeModal);
+    }
+
+    if (sliderVolume && displayVolume) {
+      sliderVolume.addEventListener('input', (e) => {
+        displayVolume.textContent = `${e.target.value}%`;
+      });
+    }
+
+    if (btnSaveVolume) {
+      btnSaveVolume.addEventListener('click', async () => {
+        if (currentVolumeSound && sliderVolume) {
+          const val = parseInt(sliderVolume.value, 10);
+          const normalizedVol = val / 100;
+          currentVolumeSound.volume = normalizedVol;
+          window.SoundList.updateSound(currentVolumeSound.id, { volume: normalizedVol });
+          if (window.soundsok && window.soundsok.sounds) {
+            await window.soundsok.sounds.update(currentVolumeSound.id, { volume: normalizedVol });
+          }
+          closeSoundVolumeModal();
+        }
+      });
+    }
+
+    // Sound Rename Modal Setup
+    const renameModal = document.getElementById('sound-rename-modal');
+    const btnCloseRename = document.getElementById('btn-close-rename-modal');
+    const inputRename = document.getElementById('rename-sound-input');
+    const btnSaveRename = document.getElementById('btn-save-sound-rename');
+
+    if (btnCloseRename) {
+      btnCloseRename.addEventListener('click', closeSoundRenameModal);
+    }
+
+    if (btnSaveRename) {
+      btnSaveRename.addEventListener('click', async () => {
+        if (currentRenameSound && inputRename) {
+          const newName = inputRename.value.trim();
+          if (newName) {
+            currentRenameSound.name = newName;
+            window.SoundList.updateSound(currentRenameSound.id, { name: newName });
+            if (window.soundsok && window.soundsok.sounds) {
+              await window.soundsok.sounds.update(currentRenameSound.id, { name: newName });
+            }
+            window.SoundList.render();
+            closeSoundRenameModal();
+          }
+        }
+      });
+    }
+
     // Hotkey
     const hotkeyModal = document.getElementById('hotkey-modal');
     const btnCloseHotkey = document.getElementById('btn-close-hotkey-modal');
@@ -693,6 +722,42 @@
     document.getElementById('hotkey-modal').classList.add('hidden');
     currentHotkeySound = null;
     recordedHotkey = '';
+  }
+
+  let currentVolumeSound = null;
+  let currentRenameSound = null;
+
+  function openSoundVolumeModal(sound) {
+    currentVolumeSound = sound;
+    document.getElementById('volume-sound-name').textContent = sound.name;
+    const vol = typeof sound.volume === 'number' ? Math.round(sound.volume * 100) : 80;
+    const slider = document.getElementById('volume-sound-slider');
+    const display = document.getElementById('volume-sound-display');
+    if (slider && display) {
+      slider.value = vol;
+      display.textContent = `${vol}%`;
+    }
+    document.getElementById('sound-volume-modal').classList.remove('hidden');
+  }
+
+  function closeSoundVolumeModal() {
+    document.getElementById('sound-volume-modal').classList.add('hidden');
+    currentVolumeSound = null;
+  }
+
+  function openSoundRenameModal(sound) {
+    currentRenameSound = sound;
+    const input = document.getElementById('rename-sound-input');
+    if (input) {
+      input.value = sound.name;
+    }
+    document.getElementById('sound-rename-modal').classList.remove('hidden');
+    input?.focus();
+  }
+
+  function closeSoundRenameModal() {
+    document.getElementById('sound-rename-modal').classList.add('hidden');
+    currentRenameSound = null;
   }
 
   async function assignHotkey(soundId, hotkey) {
