@@ -31,8 +31,9 @@ const {
   APP_TOGGLE_STARTUP,
   PTT_PRESS,
   PTT_RELEASE,
+  HOTKEY_REGISTER_STOP,
 } = require('../shared/ipc-channels');
-const { registerAllShortcuts } = require('./globalShortcuts');
+const { registerAllShortcuts, registerStopShortcut } = require('./globalShortcuts');
 const { app } = require('electron');
 
 /**
@@ -195,6 +196,15 @@ function registerIpcHandlers(db, mainWindow) {
       const sound = db.updateSound(soundId, { hotkey });
       registerAllShortcuts(); // Re-register with electron
       return { success: true, sound };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle(HOTKEY_REGISTER_STOP, (_event, hotkey) => {
+    try {
+      registerStopShortcut(hotkey);
+      return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
     }

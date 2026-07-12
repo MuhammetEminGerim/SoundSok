@@ -61,6 +61,12 @@
       window.Categories.updateCounts();
       renderHotbar();
 
+      // Register stop hotkey initially if set
+      const savedStopHotkey = localStorage.getItem('stopHotkey');
+      if (savedStopHotkey && window.soundsok && window.soundsok.hotkeys) {
+        await window.soundsok.hotkeys.registerStop(savedStopHotkey);
+      }
+
       console.log(`[App] Loaded ${(sounds || []).length} sounds`);
     } catch (err) {
       console.error('[App] Failed to load initial data:', err);
@@ -557,6 +563,71 @@
         labelMicVolVal.textContent = `${v}%`;
         localStorage.setItem('micVolumeRatio', (v / 100).toString());
         window.AudioPlayer._updateActualVolumes();
+      });
+    }
+
+    // Stop Hotkey Settings
+    const stopHotkeyRecorder = document.getElementById('stop-hotkey-recorder');
+    const stopHotkeyDisplay = document.getElementById('setting-stop-hotkey-display');
+    const btnClearStopHotkey = document.getElementById('btn-clear-stop-hotkey');
+
+    if (stopHotkeyRecorder && stopHotkeyDisplay) {
+      let savedStopHotkey = localStorage.getItem('stopHotkey') || '';
+      stopHotkeyDisplay.textContent = savedStopHotkey || 'Kısayol yok';
+
+      stopHotkeyRecorder.addEventListener('click', () => {
+        stopHotkeyRecorder.classList.add('recording');
+        stopHotkeyDisplay.textContent = 'Tuşlara basın...';
+
+        const keydownHandler = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          let keys = [];
+          if (e.ctrlKey) keys.push('CommandOrControl');
+          if (e.altKey) keys.push('Alt');
+          if (e.shiftKey) keys.push('Shift');
+
+          if (!['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
+            let key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+            keys.push(key);
+
+            const stopHotkeyStr = keys.join('+');
+            stopHotkeyDisplay.textContent = stopHotkeyStr;
+            stopHotkeyRecorder.classList.remove('recording');
+
+            localStorage.setItem('stopHotkey', stopHotkeyStr);
+            if (window.soundsok && window.soundsok.hotkeys) {
+              await window.soundsok.hotkeys.registerStop(stopHotkeyStr);
+            }
+
+            document.removeEventListener('keydown', keydownHandler);
+          }
+        };
+
+        document.addEventListener('keydown', keydownHandler);
+
+        const cancelRecording = (e) => {
+          if (!stopHotkeyRecorder.contains(e.target)) {
+            stopHotkeyRecorder.classList.remove('recording');
+            let current = localStorage.getItem('stopHotkey') || '';
+            stopHotkeyDisplay.textContent = current || 'Kısayol yok';
+            document.removeEventListener('keydown', keydownHandler);
+            document.removeEventListener('click', cancelRecording);
+          }
+        };
+
+        setTimeout(() => document.addEventListener('click', cancelRecording), 10);
+      });
+    }
+
+    if (btnClearStopHotkey && stopHotkeyDisplay) {
+      btnClearStopHotkey.addEventListener('click', async () => {
+        localStorage.removeItem('stopHotkey');
+        stopHotkeyDisplay.textContent = 'Kısayol yok';
+        if (window.soundsok && window.soundsok.hotkeys) {
+          await window.soundsok.hotkeys.registerStop(null);
+        }
       });
     }
 

@@ -2,6 +2,7 @@ const { globalShortcut } = require('electron');
 
 let database = null;
 let mainWindow = null;
+let stopShortcut = null;
 
 function initGlobalShortcuts(db, window) {
   database = db;
@@ -28,10 +29,28 @@ function registerAllShortcuts() {
       }
     }
   }
+
+  // Register global stop hotkey
+  if (stopShortcut) {
+    try {
+      globalShortcut.register(stopShortcut, () => {
+        if (!mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('cli:stop');
+        }
+      });
+    } catch (e) {
+      console.error(`Failed to register global stop hotkey ${stopShortcut}`, e);
+    }
+  }
+}
+
+function registerStopShortcut(hotkey) {
+  stopShortcut = hotkey;
+  registerAllShortcuts();
 }
 
 function unregisterAllShortcuts() {
   globalShortcut.unregisterAll();
 }
 
-module.exports = { initGlobalShortcuts, registerAllShortcuts, unregisterAllShortcuts };
+module.exports = { initGlobalShortcuts, registerAllShortcuts, unregisterAllShortcuts, registerStopShortcut };

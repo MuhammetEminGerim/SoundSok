@@ -39,6 +39,7 @@ const HOTKEY_CHECK    = 'hotkey:check';
 const APP_TOGGLE_STARTUP = 'app:toggle-startup';
 const PTT_PRESS       = 'ptt:press';
 const PTT_RELEASE     = 'ptt:release';
+const HOTKEY_REGISTER_STOP = 'hotkey:register-stop';
 
 module.exports = {
   SOUND_ADD,
@@ -68,4 +69,5 @@ module.exports = {
   APP_TOGGLE_STARTUP,
   PTT_PRESS,
   PTT_RELEASE,
+  HOTKEY_REGISTER_STOP,
 };

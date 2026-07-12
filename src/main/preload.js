@@ -27,6 +27,7 @@ const HOTKEY_CHECK       = 'hotkey:check';
 const APP_TOGGLE_STARTUP = 'app:toggle-startup';
 const PTT_PRESS          = 'ptt:press';
 const PTT_RELEASE        = 'ptt:release';
+const HOTKEY_REGISTER_STOP = 'hotkey:register-stop';
 
 contextBridge.exposeInMainWorld('soundsok', {
   // ── Sound Operations ───────────────────────────────────────────────────
@@ -103,6 +104,7 @@ contextBridge.exposeInMainWorld('soundsok', {
   hotkeys: {
     assign: (soundId, hotkey) => ipcRenderer.invoke(HOTKEY_ASSIGN, soundId, hotkey),
     check: (hotkey) => ipcRenderer.invoke(HOTKEY_CHECK, hotkey),
+    registerStop: (hotkey) => ipcRenderer.invoke(HOTKEY_REGISTER_STOP, hotkey),
   },
   
   settings: {
