@@ -74,6 +74,37 @@
     }
   }
 
+  function mapKeyCodeToElectron(e) {
+    if (e.key.length > 1) {
+      if (e.key === ' ') return 'Space';
+      if (e.key === 'ArrowUp') return 'Up';
+      if (e.key === 'ArrowDown') return 'Down';
+      if (e.key === 'ArrowLeft') return 'Left';
+      if (e.key === 'ArrowRight') return 'Right';
+      return e.key;
+    }
+
+    const codeMap = {
+      'Backquote': '`',
+      'Minus': '-',
+      'Equal': '=',
+      'BracketLeft': '[',
+      'BracketRight': ']',
+      'Backslash': '\\',
+      'Semicolon': ';',
+      'Quote': "'",
+      'Comma': ',',
+      'Period': '.',
+      'Slash': '/'
+    };
+
+    if (codeMap[e.code]) {
+      return codeMap[e.code];
+    }
+
+    return e.key.toUpperCase();
+  }
+
 
   /* ─────────────── Titlebar Buttons ─────────────── */
 
@@ -589,7 +620,7 @@
           if (e.shiftKey) keys.push('Shift');
 
           if (!['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
-            let key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+            let key = mapKeyCodeToElectron(e);
             keys.push(key);
 
             const stopHotkeyStr = keys.join('+');
@@ -744,8 +775,7 @@
           if (e.shiftKey) keys.push('Shift');
           
           if (!['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
-            // Electron hotkey format uses capital letters
-            let key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+            let key = mapKeyCodeToElectron(e);
             keys.push(key);
             
             recordedHotkey = keys.join('+');
