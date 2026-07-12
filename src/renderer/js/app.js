@@ -549,6 +549,40 @@
       });
     }
 
+    // Speaker/Mic Ratio Settings
+    const inputSpeakerVol = document.getElementById('setting-speaker-volume');
+    const labelSpeakerVolVal = document.getElementById('setting-speaker-volume-val');
+    const inputMicVol = document.getElementById('setting-mic-volume');
+    const labelMicVolVal = document.getElementById('setting-mic-volume-val');
+
+    if (inputSpeakerVol && labelSpeakerVolVal) {
+      const savedRatio = parseFloat(localStorage.getItem('speakerVolumeRatio') || '1.0');
+      const val = Math.round(savedRatio * 100);
+      inputSpeakerVol.value = val;
+      labelSpeakerVolVal.textContent = `${val}%`;
+
+      inputSpeakerVol.addEventListener('input', (e) => {
+        const v = parseInt(e.target.value, 10);
+        labelSpeakerVolVal.textContent = `${v}%`;
+        localStorage.setItem('speakerVolumeRatio', (v / 100).toString());
+        window.AudioPlayer._updateActualVolumes();
+      });
+    }
+
+    if (inputMicVol && labelMicVolVal) {
+      const savedRatio = parseFloat(localStorage.getItem('micVolumeRatio') || '1.0');
+      const val = Math.round(savedRatio * 100);
+      inputMicVol.value = val;
+      labelMicVolVal.textContent = `${val}%`;
+
+      inputMicVol.addEventListener('input', (e) => {
+        const v = parseInt(e.target.value, 10);
+        labelMicVolVal.textContent = `${v}%`;
+        localStorage.setItem('micVolumeRatio', (v / 100).toString());
+        window.AudioPlayer._updateActualVolumes();
+      });
+    }
+
     // Hotkey
     const hotkeyModal = document.getElementById('hotkey-modal');
     const btnCloseHotkey = document.getElementById('btn-close-hotkey-modal');

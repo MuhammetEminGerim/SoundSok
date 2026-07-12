@@ -349,9 +349,13 @@ class AudioPlayerEngine {
 
   _updateActualVolumes() {
     const soundVol = typeof this._currentSoundVolume === 'number' ? this._currentSoundVolume : 1.0;
-    const finalVol = this._volume * soundVol;
-    this.audioSpeakers.volume = finalVol;
-    this.audioMic.volume = finalVol;
+    
+    // Retrieve ratio values (default to 1.0)
+    const speakerRatio = parseFloat(localStorage.getItem('speakerVolumeRatio') || '1.0');
+    const micRatio = parseFloat(localStorage.getItem('micVolumeRatio') || '1.0');
+
+    this.audioSpeakers.volume = this._volume * soundVol * speakerRatio;
+    this.audioMic.volume = this._volume * soundVol * micRatio;
   }
 
   /**

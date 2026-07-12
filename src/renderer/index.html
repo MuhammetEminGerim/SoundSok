@@ -405,6 +405,22 @@
              <select id="setting-mic-device" class="form-select" style="width: 100%; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color);"></select>
            </div>
 
+           <div class="form-group" style="margin-top: 16px;">
+             <label for="setting-speaker-volume" class="form-label" style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+               <span>Kulaklık Ses Seviyesi Oranı (Senin duyacağın)</span>
+               <span id="setting-speaker-volume-val">100%</span>
+             </label>
+             <input type="range" id="setting-speaker-volume" min="0" max="100" value="100" style="width: 100%; accent-color: var(--accent-primary); background: var(--bg-tertiary);">
+           </div>
+
+           <div class="form-group" style="margin-top: 16px;">
+             <label for="setting-mic-volume" class="form-label" style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+               <span>Mikrofon (Discord) Ses Seviyesi Oranı (Karşıya gidecek)</span>
+               <span id="setting-mic-volume-val">100%</span>
+             </label>
+             <input type="range" id="setting-mic-volume" min="0" max="100" value="100" style="width: 100%; accent-color: var(--accent-primary); background: var(--bg-tertiary);">
+           </div>
+
            <label class="setting-item" style="margin-top: 16px;">
              <span class="setting-label">Bas-Konuş (PTT) Otomasyonu</span>
              <input type="checkbox" id="setting-ptt-enable" class="toggle-switch">
