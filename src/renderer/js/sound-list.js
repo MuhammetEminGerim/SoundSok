@@ -207,7 +207,7 @@ class SoundListManager {
 
     // Drag start for Hotbar assignment
     card.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', sound.id);
+      e.dataTransfer.setData('text/plain', String(sound.id));
       card.classList.add('dragging');
     });
 
