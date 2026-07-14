@@ -17,6 +17,7 @@ const { registerIpcHandlers } = require('./ipc-handlers');
 const { APP_NAME } = require('../shared/constants');
 const { createTray } = require('./tray');
 const { initGlobalShortcuts, unregisterAllShortcuts } = require('./globalShortcuts');
+const { startRemoteServer } = require('./remote-server');
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
@@ -168,6 +169,19 @@ app.whenReady().then(() => {
 
   // Wire up IPC channels
   registerIpcHandlers(database, mainWindow);
+
+  // Start Remote control web server
+  try {
+    const serverInfo = startRemoteServer(database, (channel, ...args) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(channel, ...args);
+      }
+    });
+    global.remoteUrl = serverInfo.url;
+    console.log('[Main] Web Remote Server started successfully at', global.remoteUrl);
+  } catch (err) {
+    console.error('[Main] Failed to start Web Remote Server:', err);
+  }
   
   // Create system tray
   createTray(mainWindow);

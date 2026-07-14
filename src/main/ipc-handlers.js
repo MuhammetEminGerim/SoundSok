@@ -32,6 +32,7 @@ const {
   PTT_PRESS,
   PTT_RELEASE,
   HOTKEY_REGISTER_STOP,
+  GET_REMOTE_URL,
 } = require('../shared/ipc-channels');
 const { registerAllShortcuts, registerStopShortcut } = require('./globalShortcuts');
 const { app } = require('electron');
@@ -220,6 +221,10 @@ function registerIpcHandlers(db, mainWindow) {
     } catch (error) {
       return { success: false, error: error.message };
     }
+  });
+
+  ipcMain.handle(GET_REMOTE_URL, () => {
+    return global.remoteUrl || 'http://localhost:5050';
   });
 
   ipcMain.handle(PTT_PRESS, (_event, key) => {

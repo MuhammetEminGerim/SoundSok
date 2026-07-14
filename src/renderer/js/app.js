@@ -524,9 +524,35 @@
     const btnCloseSettings = document.getElementById('btn-close-settings-modal');
     const toggleAutostart = document.getElementById('setting-autostart');
 
+    async function loadRemoteSettings() {
+      if (window.soundsok && window.soundsok.settings) {
+        try {
+          const remoteUrl = await window.soundsok.settings.getRemoteUrl();
+          const remoteLink = document.getElementById('setting-remote-link');
+          const qrContainer = document.getElementById('remote-qrcode-container');
+          if (remoteLink && qrContainer) {
+            remoteLink.href = remoteUrl;
+            remoteLink.textContent = remoteUrl;
+            
+            const qrImg = document.createElement('img');
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(remoteUrl)}`;
+            qrImg.alt = 'QR Code';
+            qrImg.style.width = '100%';
+            qrImg.style.height = '100%';
+            
+            qrContainer.innerHTML = '';
+            qrContainer.appendChild(qrImg);
+          }
+        } catch (err) {
+          console.error('[App] Failed to load remote settings:', err);
+        }
+      }
+    }
+
     if (btnSettings) {
       btnSettings.addEventListener('click', async () => {
         await loadAudioDevices();
+        await loadRemoteSettings();
         settingsModal.classList.remove('hidden');
       });
     }

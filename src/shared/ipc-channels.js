@@ -40,6 +40,7 @@ const APP_TOGGLE_STARTUP = 'app:toggle-startup';
 const PTT_PRESS       = 'ptt:press';
 const PTT_RELEASE     = 'ptt:release';
 const HOTKEY_REGISTER_STOP = 'hotkey:register-stop';
+const GET_REMOTE_URL       = 'settings:get-remote-url';
 
 module.exports = {
   SOUND_ADD,
@@ -70,4 +71,5 @@ module.exports = {
   PTT_PRESS,
   PTT_RELEASE,
   HOTKEY_REGISTER_STOP,
+  GET_REMOTE_URL,
 };

@@ -28,6 +28,7 @@ const APP_TOGGLE_STARTUP = 'app:toggle-startup';
 const PTT_PRESS          = 'ptt:press';
 const PTT_RELEASE        = 'ptt:release';
 const HOTKEY_REGISTER_STOP = 'hotkey:register-stop';
+const GET_REMOTE_URL       = 'settings:get-remote-url';
 
 contextBridge.exposeInMainWorld('soundsok', {
   // ── Sound Operations ───────────────────────────────────────────────────
@@ -109,6 +110,7 @@ contextBridge.exposeInMainWorld('soundsok', {
   
   settings: {
     toggleStartup: (enable) => ipcRenderer.invoke(APP_TOGGLE_STARTUP, enable),
+    getRemoteUrl: () => ipcRenderer.invoke(GET_REMOTE_URL),
   },
   
   ptt: {
