@@ -174,6 +174,10 @@ class AudioPlayerEngine {
 
       audioEl.addEventListener('error', (e) => {
         if (audioEl !== this._getPrimaryAudio()) return;
+        // Ignore errors caused by stopping/clearing source
+        if (this._isStopping) return;
+        if (!audioEl.src || audioEl.src === window.location.href) return;
+
         console.error(`[AudioPlayer] Playback error on ${name}:`, e);
         this.isPlaying = false;
         this.isPaused = false;
@@ -214,6 +218,7 @@ class AudioPlayerEngine {
   async loadAndPlay(filePath, soundId) {
     try {
       this.stop();
+      this._isStopping = false;
 
       this.currentSoundId = soundId;
 
@@ -338,17 +343,23 @@ class AudioPlayerEngine {
    * Stop playback entirely and reset position.
    */
   stop() {
+    this._isStopping = true;
+
     this.audioSpeakers.pause();
     this.audioSpeakers.currentTime = 0;
-    this.audioSpeakers.src = '';
+    this.audioSpeakers.removeAttribute('src');
 
     this.audioMic.pause();
     this.audioMic.currentTime = 0;
-    this.audioMic.src = '';
+    this.audioMic.removeAttribute('src');
 
     this.isPlaying = false;
     this.isPaused = false;
     this._emitStateChange();
+
+    setTimeout(() => {
+      this._isStopping = false;
+    }, 100);
   }
 
   /**
