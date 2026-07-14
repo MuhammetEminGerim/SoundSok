@@ -244,7 +244,12 @@ class AudioPlayerEngine {
         this.audioSpeakers.src = src;
         this.audioSpeakers.load();
         if (this.audioSpeakers.setSinkId) {
-          await this.audioSpeakers.setSinkId(this.speakerDeviceId);
+          try {
+            await this.audioSpeakers.setSinkId(this.speakerDeviceId || 'default');
+          } catch (e) {
+            console.warn('[AudioPlayer] Failed to set speaker sink ID, falling back to default:', e);
+            try { await this.audioSpeakers.setSinkId('default'); } catch (_) {}
+          }
         }
         this._updateActualVolumes();
         promises.push(this.audioSpeakers.play());
@@ -254,7 +259,12 @@ class AudioPlayerEngine {
         this.audioMic.src = src;
         this.audioMic.load();
         if (this.audioMic.setSinkId) {
-          await this.audioMic.setSinkId(this.micDeviceId);
+          try {
+            await this.audioMic.setSinkId(this.micDeviceId);
+          } catch (e) {
+            console.warn('[AudioPlayer] Failed to set microphone sink ID, falling back to default:', e);
+            try { await this.audioMic.setSinkId('default'); } catch (_) {}
+          }
         }
         this._updateActualVolumes();
         promises.push(this.audioMic.play());

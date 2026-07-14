@@ -938,6 +938,19 @@
         window.AudioPlayer.seek(percent);
       });
     }
+
+    // Device plug/unplug detector
+    navigator.mediaDevices.addEventListener('devicechange', async () => {
+      console.log('[App] Audio hardware change detected, refreshing devices...');
+      await loadAudioDevices();
+    });
+
+    // Handle playback errors (file moved/deleted/corrupted)
+    if (window.AudioPlayer) {
+      window.AudioPlayer.onError = () => {
+        alert('Ses dosyası oynatılamadı. Dosya silinmiş, taşınmış veya bozuk olabilir.\nLütfen dosyanın yerini kontrol edin.');
+      };
+    }
   }
 
   /* ─────────────── Utility Functions ─────────────── */
