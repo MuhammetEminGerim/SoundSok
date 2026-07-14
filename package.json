@@ -5,13 +5,15 @@
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron . --enable-logging",
-    "dev": "electron . --dev --enable-logging"
+    "dev": "electron . --dev --enable-logging",
+    "dist": "electron-builder"
   },
   "dependencies": {
     "better-sqlite3": "^11.0.0"
   },
   "devDependencies": {
-    "electron": "^28.0.0"
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3"
   },
   "keywords": [
     "soundboard",
@@ -19,5 +21,32 @@
     "audio"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "build": {
+    "appId": "com.soundsok.app",
+    "productName": "SoundSok",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SoundSok"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**/*"
+    ]
+  }
 }
