@@ -85,6 +85,12 @@ class Database {
     } catch (e) {
       // Column already exists, safe to ignore
     }
+
+    try {
+      this.db.exec('ALTER TABLE sounds ADD COLUMN volume REAL DEFAULT 0.8');
+    } catch (e) {
+      // Column already exists, safe to ignore
+    }
   }
 
   // ── Sound Methods ────────────────────────────────────────────────────────

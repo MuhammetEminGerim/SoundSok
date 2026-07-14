@@ -142,6 +142,14 @@ class AudioPlayerEngine {
         }
       });
 
+      audioEl.addEventListener('play', () => {
+        this._updateActualVolumes();
+      });
+
+      audioEl.addEventListener('playing', () => {
+        this._updateActualVolumes();
+      });
+
       audioEl.addEventListener('timeupdate', () => {
         if (audioEl !== this._getPrimaryAudio()) return;
         if (this.onTimeUpdate) {
