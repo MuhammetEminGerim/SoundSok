@@ -2,13 +2,13 @@
  * SoundSok – In-App Microphone Mixer
  *
  * Captures the physical microphone via Web Audio API, applies a noise gate,
- * and outputs the cleaned signal to CABLE Input.  This replaces the Windows
- * "Listen to this device" feature and avoids the jitter that causes Discord
- * Krisp to swallow soundboard audio.
+ * and outputs the cleaned signal DIRECTLY to CABLE Input using AudioContext's
+ * sinkId.  This replaces the Windows "Listen to this device" feature and
+ * avoids the jitter that causes Discord Krisp to swallow soundboard audio.
  *
- * Usage:
- *   window.MicMixer = new MicMixer();
- *   await window.MicMixer.start(physicalMicId, cableInputId);
+ * Key design: The AudioContext itself is created with sinkId pointing to
+ * CABLE Input, so audioContext.destination routes audio there — no
+ * intermediary <audio> element that could leak to speakers.
  */
 
 class MicMixer {
@@ -23,10 +23,6 @@ class MicMixer {
     this.gateGain = null;
     /** @type {AnalyserNode|null} */
     this.analyser = null;
-    /** @type {MediaStreamAudioDestinationNode|null} */
-    this.destination = null;
-    /** @type {HTMLAudioElement|null} */
-    this.outputAudio = null;
 
     this.isActive = false;
 
@@ -47,7 +43,7 @@ class MicMixer {
 
   /**
    * Start capturing the physical microphone and routing it through a noise
-   * gate to the virtual-cable output device.
+   * gate directly to the virtual-cable output device.
    *
    * @param {string} physicalMicId  – deviceId of the real microphone (audioinput).
    * @param {string} cableOutputId  – deviceId of CABLE Input (audiooutput).
@@ -57,7 +53,7 @@ class MicMixer {
     if (this.isActive) this.stop();
 
     try {
-      // 1. Capture the physical microphone – disable browser processing so
+      // 1. Capture the physical microphone — disable browser processing so
       //    we get the raw signal and handle noise ourselves.
       this.micStream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -68,40 +64,37 @@ class MicMixer {
         },
       });
 
-      // 2. Build the Web Audio graph
-      this.audioContext = new AudioContext();
+      // 2. Create AudioContext whose destination IS the virtual cable.
+      //    This way, everything connected to audioContext.destination goes
+      //    directly to CABLE Input — nothing leaks to the speakers.
+      const ctxOptions = {};
+      if (cableOutputId) {
+        ctxOptions.sinkId = cableOutputId;
+      }
+      this.audioContext = new AudioContext(ctxOptions);
+
+      // 3. Build the Web Audio graph
       this.micSource = this.audioContext.createMediaStreamSource(this.micStream);
 
-      // Analyser – measures RMS level for the noise gate
+      // Analyser — measures RMS level for the noise gate
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.fftSize = 2048;
       this._dataArray = new Float32Array(this.analyser.fftSize);
 
-      // Gate gain – we automate this between 0 and 1
+      // Gate gain — we automate this between 0 and 1
       this.gateGain = this.audioContext.createGain();
-      this.gateGain.gain.value = 0; // start muted
+      this.gateGain.gain.value = 0; // start muted until voice detected
 
-      // MediaStream destination – produces a stream we can feed to an <audio>
-      this.destination = this.audioContext.createMediaStreamDestination();
-
-      // Wire: mic → analyser → gateGain → destination
+      // Wire: mic → analyser → gateGain → destination (CABLE Input)
       this.micSource.connect(this.analyser);
       this.analyser.connect(this.gateGain);
-      this.gateGain.connect(this.destination);
-
-      // 3. Route the destination stream to CABLE Input via a hidden <audio>
-      this.outputAudio = new Audio();
-      this.outputAudio.srcObject = this.destination.stream;
-      if (this.outputAudio.setSinkId && cableOutputId) {
-        await this.outputAudio.setSinkId(cableOutputId);
-      }
-      await this.outputAudio.play();
+      this.gateGain.connect(this.audioContext.destination);
 
       // 4. Start the noise-gate loop
       this._runNoiseGate();
 
       this.isActive = true;
-      console.log('[MicMixer] Started — Physical mic → Noise Gate → CABLE Input');
+      console.log('[MicMixer] Started — Physical mic → Noise Gate → CABLE Input (sinkId)');
     } catch (err) {
       console.error('[MicMixer] Failed to start:', err);
       this.stop();
@@ -116,11 +109,6 @@ class MicMixer {
       cancelAnimationFrame(this._gateRAF);
       this._gateRAF = null;
     }
-    if (this.outputAudio) {
-      this.outputAudio.pause();
-      this.outputAudio.srcObject = null;
-      this.outputAudio = null;
-    }
     if (this.micStream) {
       this.micStream.getTracks().forEach((t) => t.stop());
       this.micStream = null;
@@ -132,7 +120,6 @@ class MicMixer {
     this.micSource = null;
     this.analyser = null;
     this.gateGain = null;
-    this.destination = null;
     this.isActive = false;
     console.log('[MicMixer] Stopped');
   }
@@ -148,7 +135,7 @@ class MicMixer {
 
   /* ────────────────────────── Internals ─────────────────────────── */
 
-  /** @private – runs once per animation frame */
+  /** @private — runs once per animation frame */
   _runNoiseGate() {
     if (!this.analyser || !this.gateGain || !this.audioContext) return;
 
