@@ -1274,6 +1274,7 @@
   /* ─────────────── Audio Devices ─────────────── */
 
   let _audioDeviceListenersBound = false;
+  let _micMixerListenersBound = false;
 
   async function loadAudioDevices() {
     try {
@@ -1290,6 +1291,7 @@
       
       const devices = await navigator.mediaDevices.enumerateDevices();
       const outputs = devices.filter(d => d.kind === 'audiooutput');
+      const inputs = devices.filter(d => d.kind === 'audioinput');
       
       speakerSelect.innerHTML = '';
       micSelect.innerHTML = '';
@@ -1334,16 +1336,136 @@
         micSelect.addEventListener('change', async (e) => {
           localStorage.setItem('micDeviceId', e.target.value);
           await window.AudioPlayer.setMicDevice(e.target.value);
+          // Restart mic mixer if active (cable device changed)
+          if (window.MicMixer && window.MicMixer.isActive) {
+            const physMicSelect = document.getElementById('setting-physical-mic');
+            if (physMicSelect && physMicSelect.value) {
+              await window.MicMixer.start(physMicSelect.value, e.target.value);
+            }
+          }
         });
       }
       
       // Initialize player engine settings
       await window.AudioPlayer.setSpeakerDevice(speakerSelect.value);
       await window.AudioPlayer.setMicDevice(micSelect.value);
+
+      // ── Mic Mixer (Krisp Bypass) Settings ──
+      await loadMicMixerSettings(inputs);
       
     } catch (err) {
       console.error('[App] Failed to load audio devices:', err);
     }
   }
 
+
+  /**
+   * Populate the Mic Mixer panel and wire up its controls.
+   * @param {MediaDeviceInfo[]} inputs  – audioinput devices already enumerated.
+   */
+  async function loadMicMixerSettings(inputs) {
+    const enableToggle = document.getElementById('setting-mic-mixer-enable');
+    const settingsDiv  = document.getElementById('mic-mixer-settings');
+    const physMicSelect = document.getElementById('setting-physical-mic');
+    const gateSlider   = document.getElementById('setting-noise-gate');
+    const gateValLabel = document.getElementById('setting-noise-gate-val');
+    if (!enableToggle || !settingsDiv || !physMicSelect) return;
+
+    // Populate physical-mic dropdown with audioinput devices
+    physMicSelect.innerHTML = '';
+    inputs.forEach(device => {
+      // Skip virtual cables from the physical mic list
+      const label = (device.label || '').toLowerCase();
+      const opt = document.createElement('option');
+      opt.value = device.deviceId;
+      opt.textContent = device.label || `Mikrofon (${device.deviceId.slice(0, 5)}...)`;
+      physMicSelect.appendChild(opt);
+    });
+
+    // Restore saved values
+    const savedEnabled = localStorage.getItem('micMixerEnabled') === 'true';
+    const savedPhysMic = localStorage.getItem('micMixerPhysMic');
+    const savedThreshold = localStorage.getItem('micMixerThreshold');
+
+    enableToggle.checked = savedEnabled;
+    settingsDiv.style.display = savedEnabled ? 'block' : 'none';
+    if (savedPhysMic) physMicSelect.value = savedPhysMic;
+    if (savedThreshold && gateSlider) {
+      gateSlider.value = savedThreshold;
+    }
+    updateGateLabel(gateSlider, gateValLabel);
+
+    // Auto-start if was previously enabled
+    if (savedEnabled && physMicSelect.value) {
+      const cableId = localStorage.getItem('micDeviceId') || '';
+      if (cableId) {
+        try {
+          if (savedThreshold) window.MicMixer.noiseGateThreshold = Number(savedThreshold);
+          await window.MicMixer.start(physMicSelect.value, cableId);
+        } catch (e) {
+          console.warn('[App] MicMixer auto-start failed:', e);
+        }
+      }
+    }
+
+    // Bind events once
+    if (!_micMixerListenersBound) {
+      _micMixerListenersBound = true;
+
+      enableToggle.addEventListener('change', async () => {
+        const enabled = enableToggle.checked;
+        localStorage.setItem('micMixerEnabled', String(enabled));
+        settingsDiv.style.display = enabled ? 'block' : 'none';
+
+        if (enabled) {
+          const cableId = localStorage.getItem('micDeviceId') || '';
+          if (physMicSelect.value && cableId) {
+            await window.MicMixer.start(physMicSelect.value, cableId);
+          }
+        } else {
+          window.MicMixer.stop();
+        }
+      });
+
+      physMicSelect.addEventListener('change', async () => {
+        localStorage.setItem('micMixerPhysMic', physMicSelect.value);
+        if (enableToggle.checked && window.MicMixer.isActive) {
+          const cableId = localStorage.getItem('micDeviceId') || '';
+          if (cableId) {
+            await window.MicMixer.start(physMicSelect.value, cableId);
+          }
+        }
+      });
+
+      if (gateSlider) {
+        gateSlider.addEventListener('input', () => {
+          const val = Number(gateSlider.value);
+          window.MicMixer.setThreshold(val);
+          updateGateLabel(gateSlider, gateValLabel);
+        });
+      }
+    }
+  }
+
+
+  /**
+   * Update the noise-gate label text based on slider position.
+   */
+  function updateGateLabel(slider, label) {
+    if (!slider || !label) return;
+    const val = Number(slider.value);
+    if (val <= -60) {
+      label.textContent = 'Çok Düşük (Hassas)';
+    } else if (val <= -50) {
+      label.textContent = 'Düşük';
+    } else if (val <= -42) {
+      label.textContent = 'Orta';
+    } else if (val <= -33) {
+      label.textContent = 'Yüksek';
+    } else {
+      label.textContent = 'Çok Yüksek (Agresif)';
+    }
+  }
+
 })();
+
