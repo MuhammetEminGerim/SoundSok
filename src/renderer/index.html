@@ -501,29 +501,6 @@
              </div>
            </div>
 
-            <!-- Mic Mixer Section (Krisp Bypass) -->
-            <div class="form-group" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-              <label class="setting-item" style="margin-bottom: 10px;">
-                <span class="setting-label" style="font-weight: 600; color: var(--accent-primary);">🎤 Mikrofon Mikseri (Krisp Uyumlu)</span>
-                <input type="checkbox" id="setting-mic-mixer-enable" class="toggle-switch">
-              </label>
-              <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 10px; line-height: 1.4;">
-                Açıldığında Windows'taki "Bu aygıtı dinle" ayarını kapatın. Mikrofon sesiniz uygulama içinden temizlenerek gönderilir.
-              </span>
-              <div id="mic-mixer-settings" style="display: none;">
-                <div class="form-group" style="margin-top: 8px;">
-                  <label for="setting-physical-mic" class="form-label">Fiziksel Mikrofon (Gerçek mikrofonunuz)</label>
-                  <select id="setting-physical-mic" class="form-select" style="width: 100%; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color);"></select>
-                </div>
-                <div class="form-group" style="margin-top: 10px;">
-                  <label for="setting-noise-gate" class="form-label" style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                    <span>Gürültü Kapısı Hassasiyeti</span>
-                    <span id="setting-noise-gate-val">Orta</span>
-                  </label>
-                  <input type="range" id="setting-noise-gate" min="-70" max="-25" value="-50" style="width: 100%; accent-color: var(--accent-primary); background: var(--bg-tertiary);">
-                </div>
-              </div>
-            </div>
 
            <!-- Web Remote Control Section -->
            <div class="form-group" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color);">
@@ -622,7 +599,7 @@
   <script src="js/categories.js"></script>
   <script src="js/player.js"></script>
   <script src="js/search.js"></script>
-  <script src="js/mic-mixer.js"></script>
+
   <script src="js/app.js"></script>
 </body>
 </html>
