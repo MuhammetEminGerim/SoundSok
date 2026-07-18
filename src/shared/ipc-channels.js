@@ -20,8 +20,9 @@ const PLAYBACK_SEEK   = 'playback:seek';
 const PLAYBACK_VOLUME = 'playback:volume';
 
 // ── Native Dialogs ───────────────────────────────────────────────────────────
-const DIALOG_OPEN_FILES  = 'dialog:open-files';
+const DIALOG_OPEN_FILES   = 'dialog:open-files';
 const DIALOG_SELECT_IMAGE = 'dialog:select-image';
+const DIALOG_PASTE_IMAGE  = 'dialog:paste-image';
 
 // ── Window Controls (frameless title-bar buttons) ────────────────────────────
 const APP_MINIMIZE = 'app:minimize';
@@ -57,6 +58,7 @@ module.exports = {
 
   DIALOG_OPEN_FILES,
   DIALOG_SELECT_IMAGE,
+  DIALOG_PASTE_IMAGE,
 
   APP_MINIMIZE,
   APP_MAXIMIZE,

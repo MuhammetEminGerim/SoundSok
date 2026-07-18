@@ -12,7 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { ipcMain, dialog } = require('electron');
+const { ipcMain, dialog, clipboard } = require('electron');
 const { SUPPORTED_FORMATS } = require('../shared/constants');
 const {
   SOUND_ADD,
@@ -21,6 +21,7 @@ const {
   SOUND_UPDATE,
   DIALOG_OPEN_FILES,
   DIALOG_SELECT_IMAGE,
+  DIALOG_PASTE_IMAGE,
   APP_MINIMIZE,
   APP_MAXIMIZE,
   APP_CLOSE,
@@ -114,6 +115,28 @@ function registerIpcHandlers(db, mainWindow) {
     } catch (err) {
       console.error('[IPC] Failed to copy cover image:', err);
       return { canceled: true, error: err.message };
+    }
+  });
+
+  ipcMain.handle(DIALOG_PASTE_IMAGE, async () => {
+    try {
+      const image = clipboard.readImage();
+      if (image.isEmpty()) {
+        return { success: false, error: 'Panoda herhangi bir görsel bulunamadı. Lütfen önce bir görsel kopyalayın.' };
+      }
+      const pngBuffer = image.toPNG();
+      const coversDir = path.join(app.getPath('userData'), 'covers');
+      if (!fs.existsSync(coversDir)) {
+        fs.mkdirSync(coversDir, { recursive: true });
+      }
+      const destName = `cover_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.png`;
+      const destPath = path.join(coversDir, destName);
+      fs.writeFileSync(destPath, pngBuffer);
+
+      return { success: true, filePath: destPath };
+    } catch (err) {
+      console.error('[IPC] Failed to paste image from clipboard:', err);
+      return { success: false, error: err.message };
     }
   });
 

@@ -16,6 +16,7 @@ const SOUND_LIST         = 'sound:list';
 const SOUND_UPDATE       = 'sound:update';
 const DIALOG_OPEN_FILES   = 'dialog:open-files';
 const DIALOG_SELECT_IMAGE = 'dialog:select-image';
+const DIALOG_PASTE_IMAGE  = 'dialog:paste-image';
 const APP_MINIMIZE       = 'app:minimize';
 const APP_MAXIMIZE       = 'app:maximize';
 const APP_CLOSE          = 'app:close';
@@ -142,6 +143,12 @@ contextBridge.exposeInMainWorld('soundsok', {
      * @returns {Promise<{ canceled: boolean, filePath?: string }>}
      */
     selectImage: () => ipcRenderer.invoke(DIALOG_SELECT_IMAGE),
+
+    /**
+     * Read image directly from system clipboard and save as cover image.
+     * @returns {Promise<{ success: boolean, filePath?: string, error?: string }>}
+     */
+    pasteImage: () => ipcRenderer.invoke(DIALOG_PASTE_IMAGE),
   },
 
   // ── Window Controls (frameless title bar) ──────────────────────────────

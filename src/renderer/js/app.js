@@ -473,6 +473,20 @@
         }
         break;
 
+      case 'paste-cover':
+        if (window.soundsok && window.soundsok.dialog) {
+          const res = await window.soundsok.dialog.pasteImage();
+          if (res.success && res.filePath) {
+            const updateRes = await window.soundsok.sounds.update(sound.id, { coverImage: res.filePath });
+            if (updateRes.success && updateRes.sound) {
+              window.SoundList.updateSound(updateRes.sound);
+            }
+          } else if (res.error) {
+            alert(res.error);
+          }
+        }
+        break;
+
       case 'remove-cover':
         if (window.soundsok && window.soundsok.sounds) {
           const res = await window.soundsok.sounds.update(sound.id, { coverImage: null });
@@ -926,6 +940,28 @@
   /* ─────────────── Global Listeners ─────────────── */
 
   function setupGlobalListeners() {
+    // Global Paste (Ctrl+V) listener to assign clipboard image as cover
+    document.addEventListener('paste', async (e) => {
+      // Don't trigger if user is typing in an input or textarea
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
+      const targetCard = document.querySelector('.sound-card:hover') || document.querySelector('.sound-card:focus');
+      const soundId = targetCard?.dataset?.soundId || window.SoundList?.contextSoundId;
+
+      if (soundId) {
+        const sound = window.SoundList.getSoundById(soundId);
+        if (sound && window.soundsok && window.soundsok.dialog) {
+          const res = await window.soundsok.dialog.pasteImage();
+          if (res.success && res.filePath) {
+            const updateRes = await window.soundsok.sounds.update(sound.id, { coverImage: res.filePath });
+            if (updateRes.success && updateRes.sound) {
+              window.SoundList.updateSound(updateRes.sound);
+            }
+          }
+        }
+      }
+    });
+
     if (window.soundsok && window.soundsok.playback) {
       window.soundsok.playback.onPlayHotkey((sound) => {
         console.log('[App] Playing from hotkey:', sound.name);
