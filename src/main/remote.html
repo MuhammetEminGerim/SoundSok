@@ -172,6 +172,34 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
+    .sound-card.has-cover {
+      background-size: cover !important;
+      background-position: center !important;
+      background-repeat: no-repeat !important;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .sound-card.has-cover::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.45) 60%, rgba(0, 0, 0, 0.2) 100%);
+      border-radius: 16px;
+      z-index: 1;
+    }
+
+    .sound-card.has-cover .sound-name {
+      position: relative;
+      z-index: 2;
+      color: #ffffff;
+      font-weight: 700;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+    }
+
+    .sound-card.has-cover .sound-icon {
+      display: none;
+    }
+
     .sound-icon {
       font-size: 28px;
       background: rgba(139, 92, 246, 0.1);
@@ -378,12 +406,11 @@
         const icon = document.createElement('div');
         icon.className = 'sound-icon';
         if (sound.coverImage) {
-          icon.style.backgroundImage = `url('/api/cover?id=${sound.id}')`;
-          icon.style.backgroundSize = 'cover';
-          icon.style.backgroundPosition = 'center';
-          icon.textContent = '';
+          card.classList.add('has-cover');
+          card.style.backgroundImage = `url('/api/cover?id=${sound.id}')`;
         } else {
           icon.textContent = '🎵';
+          card.appendChild(icon);
         }
 
         const name = document.createElement('div');

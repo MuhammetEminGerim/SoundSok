@@ -1130,7 +1130,8 @@
     
     // Reset all slots first
     slots.forEach(slot => {
-      slot.classList.remove('filled');
+      slot.classList.remove('filled', 'has-cover');
+      slot.style.backgroundImage = '';
       slot.removeAttribute('data-sound-id');
       const nameEl = slot.querySelector('.slot-name');
       if (nameEl) nameEl.textContent = 'Boş';
@@ -1145,6 +1146,18 @@
         if (slot) {
           slot.classList.add('filled');
           slot.dataset.soundId = sound.id;
+
+          if (sound.coverImage) {
+            slot.classList.add('has-cover');
+            const imgUrl = `file:///${sound.coverImage.replace(/\\/g, '/')}`;
+            slot.style.backgroundImage = `linear-gradient(to top, rgba(15, 17, 26, 0.9) 0%, rgba(15, 17, 26, 0.4) 100%), url('${encodeURI(imgUrl)}')`;
+            slot.style.backgroundSize = 'cover';
+            slot.style.backgroundPosition = 'center';
+          } else {
+            slot.classList.remove('has-cover');
+            slot.style.backgroundImage = '';
+          }
+
           const nameEl = slot.querySelector('.slot-name');
           if (nameEl) {
             nameEl.textContent = sound.name;

@@ -479,6 +479,32 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.sound-card.has-cover {
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.sound-card.has-cover .sound-card-name {
+  color: #ffffff;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.sound-card.has-cover .sound-card-meta {
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.sound-grid .sound-card.has-cover .sound-card-icon {
+  display: none;
+}
+
+.sound-list-view .sound-card.has-cover .sound-card-icon {
+  display: flex;
+}
+
 .sound-card:hover .sound-card-icon {
   transform: scale(1.08);
 }

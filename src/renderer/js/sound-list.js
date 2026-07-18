@@ -243,7 +243,9 @@ class SoundListManager {
 
     let iconHtml = `<div class="sound-card-icon">${icon}</div>`;
     if (sound.coverImage) {
+      card.classList.add('has-cover');
       const imgUrl = `file:///${sound.coverImage.replace(/\\/g, '/')}`;
+      card.style.backgroundImage = `linear-gradient(to top, rgba(15, 17, 26, 0.95) 0%, rgba(15, 17, 26, 0.5) 55%, rgba(15, 17, 26, 0.2) 100%), url('${encodeURI(imgUrl)}')`;
       iconHtml = `<div class="sound-card-icon sound-card-cover" style="background-image: url('${encodeURI(imgUrl)}');"></div>`;
     }
 
