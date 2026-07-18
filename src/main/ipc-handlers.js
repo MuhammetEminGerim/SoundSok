@@ -90,6 +90,7 @@ function registerIpcHandlers(db, mainWindow) {
     try {
       const name = nameFromPath(filePath);
       const sound = db.addSound({ name, filePath });
+      registerAllShortcuts();
       return { success: true, sound };
     } catch (error) {
       // UNIQUE constraint violation → file already added
@@ -103,6 +104,7 @@ function registerIpcHandlers(db, mainWindow) {
   ipcMain.handle(SOUND_REMOVE, (_event, id) => {
     try {
       const result = db.removeSound(id);
+      registerAllShortcuts();
       return { success: true, ...result };
     } catch (error) {
       return { success: false, error: error.message };
@@ -124,6 +126,7 @@ function registerIpcHandlers(db, mainWindow) {
       if (!sound) {
         return { success: false, error: 'Sound not found.' };
       }
+      registerAllShortcuts();
       return { success: true, sound };
     } catch (error) {
       return { success: false, error: error.message };

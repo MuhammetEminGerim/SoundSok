@@ -19,9 +19,13 @@ function registerAllShortcuts() {
   for (const sound of sounds) {
     if (sound.hotkey) {
       try {
+        const soundId = sound.id;
         globalShortcut.register(sound.hotkey, () => {
           if (!mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('PLAYBACK_PLAY_HOTKEY', sound);
+            const currentSound = database.getSoundById(soundId);
+            if (currentSound && currentSound.hotkey) {
+              mainWindow.webContents.send('PLAYBACK_PLAY_HOTKEY', currentSound);
+            }
           }
         });
       } catch (e) {
