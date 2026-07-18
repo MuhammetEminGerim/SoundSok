@@ -377,7 +377,14 @@
 
         const icon = document.createElement('div');
         icon.className = 'sound-icon';
-        icon.textContent = '🎵';
+        if (sound.coverImage) {
+          icon.style.backgroundImage = `url('/api/cover?id=${sound.id}')`;
+          icon.style.backgroundSize = 'cover';
+          icon.style.backgroundPosition = 'center';
+          icon.textContent = '';
+        } else {
+          icon.textContent = '🎵';
+        }
 
         const name = document.createElement('div');
         name.className = 'sound-name';

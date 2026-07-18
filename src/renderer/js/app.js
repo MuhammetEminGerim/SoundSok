@@ -461,6 +461,27 @@
         openSoundRenameModal(sound);
         break;
 
+      case 'cover':
+        if (window.soundsok && window.soundsok.dialog) {
+          const imgRes = await window.soundsok.dialog.selectImage();
+          if (!imgRes.canceled && imgRes.filePath) {
+            const res = await window.soundsok.sounds.update(sound.id, { coverImage: imgRes.filePath });
+            if (res.success && res.sound) {
+              window.SoundList.updateSound(res.sound);
+            }
+          }
+        }
+        break;
+
+      case 'remove-cover':
+        if (window.soundsok && window.soundsok.sounds) {
+          const res = await window.soundsok.sounds.update(sound.id, { coverImage: null });
+          if (res.success && res.sound) {
+            window.SoundList.updateSound(res.sound);
+          }
+        }
+        break;
+
       case 'hotkey':
         openHotkeyModal(sound);
         break;

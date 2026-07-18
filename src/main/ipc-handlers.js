@@ -10,6 +10,7 @@
  *   registerIpcHandlers(db, mainWindow);
  */
 
+const fs = require('fs');
 const path = require('path');
 const { ipcMain, dialog } = require('electron');
 const { SUPPORTED_FORMATS } = require('../shared/constants');
@@ -19,6 +20,7 @@ const {
   SOUND_LIST,
   SOUND_UPDATE,
   DIALOG_OPEN_FILES,
+  DIALOG_SELECT_IMAGE,
   APP_MINIMIZE,
   APP_MAXIMIZE,
   APP_CLOSE,
@@ -82,6 +84,37 @@ function registerIpcHandlers(db, mainWindow) {
     });
 
     return result;
+  });
+
+  ipcMain.handle(DIALOG_SELECT_IMAGE, async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Kapak Resmi Seç',
+      properties: ['openFile'],
+      filters: [
+        { name: 'Görseller', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }
+      ]
+    });
+
+    if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+      return { canceled: true };
+    }
+
+    try {
+      const srcPath = result.filePaths[0];
+      const coversDir = path.join(app.getPath('userData'), 'covers');
+      if (!fs.existsSync(coversDir)) {
+        fs.mkdirSync(coversDir, { recursive: true });
+      }
+      const ext = path.extname(srcPath);
+      const destName = `cover_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`;
+      const destPath = path.join(coversDir, destName);
+      fs.copyFileSync(srcPath, destPath);
+
+      return { canceled: false, filePath: destPath };
+    } catch (err) {
+      console.error('[IPC] Failed to copy cover image:', err);
+      return { canceled: true, error: err.message };
+    }
   });
 
   // ── Sound CRUD ─────────────────────────────────────────────────────────

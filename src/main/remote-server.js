@@ -104,6 +104,31 @@ function startRemoteServer(db, sendToRenderer) {
       return;
     }
 
+    // 5. Serve Sound Cover Image
+    if (req.method === 'GET' && url.pathname === '/api/cover') {
+      const soundId = url.searchParams.get('id');
+      if (soundId) {
+        const sound = db.getSoundById(Number(soundId));
+        if (sound && sound.coverImage && fs.existsSync(sound.coverImage)) {
+          const ext = path.extname(sound.coverImage).toLowerCase();
+          const mimeMap = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.webp': 'image/webp',
+            '.gif': 'image/gif',
+          };
+          const contentType = mimeMap[ext] || 'image/jpeg';
+          res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'max-age=86400' });
+          fs.createReadStream(sound.coverImage).pipe(res);
+          return;
+        }
+      }
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('No cover');
+      return;
+    }
+
     // Fallback 404
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found');

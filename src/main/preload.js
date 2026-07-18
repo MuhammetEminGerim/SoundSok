@@ -14,7 +14,8 @@ const SOUND_ADD          = 'sound:add';
 const SOUND_REMOVE       = 'sound:remove';
 const SOUND_LIST         = 'sound:list';
 const SOUND_UPDATE       = 'sound:update';
-const DIALOG_OPEN_FILES  = 'dialog:open-files';
+const DIALOG_OPEN_FILES   = 'dialog:open-files';
+const DIALOG_SELECT_IMAGE = 'dialog:select-image';
 const APP_MINIMIZE       = 'app:minimize';
 const APP_MAXIMIZE       = 'app:maximize';
 const APP_CLOSE          = 'app:close';
@@ -135,6 +136,12 @@ contextBridge.exposeInMainWorld('soundsok', {
      * @returns {Promise<string[]>} Array of selected file paths (empty if cancelled).
      */
     openFiles: () => ipcRenderer.invoke(DIALOG_OPEN_FILES),
+
+    /**
+     * Open a native file-picker filtered to image formats for sound cover art.
+     * @returns {Promise<{ canceled: boolean, filePath?: string }>}
+     */
+    selectImage: () => ipcRenderer.invoke(DIALOG_SELECT_IMAGE),
   },
 
   // ── Window Controls (frameless title bar) ──────────────────────────────

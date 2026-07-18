@@ -73,18 +73,25 @@ class SoundListManager {
 
   /**
    * Update a sound's data.
-   * @param {string} id
+   * @param {string|Object} idOrObject
    * @param {Object} updates
    */
-  updateSound(id, updates) {
+  updateSound(idOrObject, updates) {
+    let id = idOrObject;
+    let newValues = updates;
+    if (typeof idOrObject === 'object' && idOrObject !== null) {
+      id = idOrObject.id;
+      newValues = idOrObject;
+    }
     const idx = this.sounds.findIndex(s => String(s.id) === String(id));
     if (idx !== -1) {
-      this.sounds[idx] = { ...this.sounds[idx], ...updates };
+      this.sounds[idx] = { ...this.sounds[idx], ...newValues };
     }
     const fIdx = this.filteredSounds.findIndex(s => String(s.id) === String(id));
     if (fIdx !== -1) {
-      this.filteredSounds[fIdx] = { ...this.filteredSounds[fIdx], ...updates };
+      this.filteredSounds[fIdx] = { ...this.filteredSounds[fIdx], ...newValues };
     }
+    this.render();
   }
 
   /**
@@ -234,9 +241,15 @@ class SoundListManager {
       hotkeyHtml = `<div class="hotkey-badge" title="Kısayol: ${sound.hotkey}">${sound.hotkey}</div>`;
     }
 
+    let iconHtml = `<div class="sound-card-icon">${icon}</div>`;
+    if (sound.coverImage) {
+      const imgUrl = `file:///${sound.coverImage.replace(/\\/g, '/')}`;
+      iconHtml = `<div class="sound-card-icon sound-card-cover" style="background-image: url('${encodeURI(imgUrl)}');"></div>`;
+    }
+
     card.innerHTML = `
       ${hotkeyHtml}
-      <div class="sound-card-icon">${icon}</div>
+      ${iconHtml}
       <span class="sound-card-name truncate" title="${this._escapeHtml(sound.name)}">${this._escapeHtml(sound.name)}</span>
       <div class="sound-card-meta">
         <span class="sound-card-badge">${ext.toUpperCase()}</span>
@@ -356,6 +369,11 @@ class SoundListManager {
     if (!menu) return;
 
     this.contextSoundId = sound.id;
+
+    const removeCoverBtn = document.getElementById('ctx-remove-cover');
+    if (removeCoverBtn) {
+      removeCoverBtn.style.display = sound.coverImage ? 'flex' : 'none';
+    }
 
     // Position menu
     const x = event.clientX;

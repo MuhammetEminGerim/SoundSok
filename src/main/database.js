@@ -91,6 +91,12 @@ class Database {
     } catch (e) {
       // Column already exists, safe to ignore
     }
+
+    try {
+      this.db.exec('ALTER TABLE sounds ADD COLUMN cover_image TEXT');
+    } catch (e) {
+      // Column already exists, safe to ignore
+    }
   }
 
   // ── Sound Methods ────────────────────────────────────────────────────────
@@ -111,8 +117,8 @@ class Database {
    */
   addSound(sound) {
     const stmt = this.db.prepare(`
-      INSERT INTO sounds (name, file_path, volume, category_id, hotkey, play_mode, sort_order, duration, hotbar_slot)
-      VALUES (@name, @filePath, @volume, @categoryId, @hotkey, @playMode, @sortOrder, @duration, @hotbarSlot)
+      INSERT INTO sounds (name, file_path, volume, category_id, hotkey, play_mode, sort_order, duration, hotbar_slot, cover_image)
+      VALUES (@name, @filePath, @volume, @categoryId, @hotkey, @playMode, @sortOrder, @duration, @hotbarSlot, @coverImage)
     `);
 
     const info = stmt.run({
@@ -125,6 +131,7 @@ class Database {
       sortOrder: sound.sortOrder ?? 0,
       duration: sound.duration ?? 0,
       hotbarSlot: sound.hotbarSlot ?? null,
+      coverImage: sound.coverImage ?? null,
     });
 
     return this.getSoundById(info.lastInsertRowid);
@@ -187,6 +194,8 @@ class Database {
       sortOrder: 'sort_order',
       duration: 'duration',
       hotbarSlot: 'hotbar_slot',
+      coverImage: 'cover_image',
+      cover_image: 'cover_image',
     };
 
     const setClauses = [];
@@ -348,6 +357,7 @@ class Database {
       createdAt: row.created_at,
       duration: row.duration,
       hotbarSlot: row.hotbar_slot,
+      coverImage: row.cover_image || null,
     };
   }
 
